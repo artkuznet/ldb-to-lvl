@@ -15,6 +15,6 @@ public class PolygonContainer {
     }
 
     public Polygon getById(int id) {
-        return polygons.stream().filter(p -> p.getId() == id).findFirst().orElseThrow();
+        return polygons.stream().filter(p -> p.getId() == id).findFirst().orElseThrow(null );
     }
 }

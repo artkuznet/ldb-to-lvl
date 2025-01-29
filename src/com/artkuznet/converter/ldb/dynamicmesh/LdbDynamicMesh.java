@@ -2,8 +2,10 @@ package com.artkuznet.converter.ldb.dynamicmesh;
 
 import com.artkuznet.converter.ldb.animation.AnimationContainer;
 import com.artkuznet.converter.ldb.polygon.Geometry;
+import com.artkuznet.converter.ldb.polygon.Polygon;
 import com.artkuznet.converter.ldb.polygon.PolygonContainer;
 import com.artkuznet.converter.ldb.property.EntityProperties;
+import com.artkuznet.converter.ldb.texture.TextureVertex;
 import com.artkuznet.converter.ldb.texture.TextureVertexContainer;
 import com.artkuznet.converter.ldb.vertex.Vertex;
 import com.artkuznet.converter.ldb.vertex.VertexContainer;
@@ -48,18 +50,17 @@ public class LdbDynamicMesh {
     }
 
     public Geometry constructPolygon(int id) {
-
-        var polygon = polygons.getList().get(id);
+        Polygon polygon = polygons.getList().get(id);
 
         List<Vertex> vertices = new ArrayList<>();
         List<Vertex> normals = new ArrayList<>();
         List<VertexUV> uv = new ArrayList<>();
 
         for (int i = 0; i < polygon.getNumVertices(); i++) {
-            var texture_vertex = this.textureVertices.getList().get(polygon.getTextureVertexIdx() + i);
-            vertices.add(this.vertices.getList().get(texture_vertex.getVertexIdx()));
-            normals.add(this.normals.getList().get(texture_vertex.getVertexIdx()));
-            uv.add(texture_vertex.getUV());
+            TextureVertex textureVertex = this.textureVertices.getList().get(polygon.getTextureVertexIdx() + i);
+            vertices.add(this.vertices.getList().get(textureVertex.getVertexIdx()));
+            normals.add(this.normals.getList().get(textureVertex.getVertexIdx()));
+            uv.add(textureVertex.getUV());
         }
 
         return new Geometry(polygon.getId(), vertices, normals, uv, polygon.getMaterial());
@@ -70,7 +71,7 @@ public class LdbDynamicMesh {
     }
 
     public String getShortName() {
-        var name = sharedName.substring(sharedName.lastIndexOf("::") + 2);
+        String name = sharedName.substring(sharedName.lastIndexOf("::") + 2);
         name =  name.substring(0, name.length() - 3);
 
         if(name.length() > 255) {

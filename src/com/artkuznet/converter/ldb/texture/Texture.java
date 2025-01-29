@@ -21,14 +21,20 @@ public class Texture {
     }
 
     public String getFileTypeName() {
-        return switch (fileType) {
-            case 0 -> "tga";
-            case 2 -> "scx";
-            case 3 -> "pcx";
-            case 4 -> "jpg";
-            case 5 -> "dds";
-            default -> throw new RuntimeException("Unknown texture file type " + fileType);
-        };
+        switch (fileType) {
+            case 0:
+                return "tga";
+            case 2:
+                return "scx";
+            case 3:
+                return "pcx";
+            case 4:
+                return "jpg";
+            case 5:
+                return "dds";
+            default:
+                throw new RuntimeException("Unknown texture file type " + fileType);
+        }
     }
 
     public String getFilePath() {

@@ -8,28 +8,22 @@ import java.util.*;
 public class Main {
 
     public static void main(final String[] args) {
+        for (String ldbFilename : args) {
+            String lvlFilename = ldbFilename.replace(".ldb", ".lvl");
 
-        var ldbFilename = "C:\\Program Files (x86)\\MAX-FX Tools\\MaxEd\\Examples\\BasicRoom.ldb";
+            Writer writer = new Writer(lvlFilename);
 
-        var lvlFilename = Arrays.stream(ldbFilename.split("\\\\"))
-                .filter(e -> e.endsWith(".ldb"))
-                .findFirst()
-                .orElseThrow()
-                .replace(".ldb", "_") + Math.abs(new Random().nextInt()) + ".lvl";
+            List<Byte> bytesList = new LVL(new MaxLDBReader(ldbFilename).getLdb()).toBytes();
+            byte[] bytesArray = new byte[bytesList.size()];
+            for (int i = 0; i < bytesArray.length; i++) {
+                bytesArray[i] = bytesList.get(i);
+            }
+            writer.writeBytes(bytesArray);
 
-
-        var writer = new Writer(lvlFilename);
-
-        var bytesList = new LVL(new MaxLDBReader(ldbFilename).getLdb()).toBytes();
-        var bytesArray = new byte[bytesList.size()];
-        for (int i = 0; i < bytesArray.length; i++) {
-            bytesArray[i] = bytesList.get(i);
-        }
-        writer.writeBytes(bytesArray);
-
-        try {
-            writer.save();
-        } catch (Exception ignored) {
+            try {
+                writer.save();
+            } catch (Exception ignored) {
+            }
         }
     }
 }

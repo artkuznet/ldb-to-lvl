@@ -9,14 +9,20 @@ public class Trigger {
     private int type; // 0 - action_button 3 - character_collide 4 - look_at_trigger 1 - player_collide 2 - projectile_collide
 
     public String getTypeString() {
-        return switch (type) {
-            case 0 -> "Action button";
-            case 1 -> "Player collision";
-            case 2 -> "Projectile collision";
-            case 3 -> "Character collision";
-            case 4 -> "Look-at";
-            default -> throw new RuntimeException("Unknown trigger type");
-        };
+        switch (type) {
+            case 0:
+                return "Action button";
+            case 1:
+                return "Player collision";
+            case 2:
+                return "Projectile collision";
+            case 3:
+                return "Character collision";
+            case 4:
+                return "Look-at";
+            default:
+                throw new RuntimeException("Unknown trigger type");
+        }
     }
 
     public Trigger(
@@ -36,7 +42,7 @@ public class Trigger {
     }
 
     public String getShortName() {
-        var name = sharedName.substring(sharedName.lastIndexOf("::") + 2);
+        String name = sharedName.substring(sharedName.lastIndexOf("::") + 2);
         name = name.substring(0, name.length() - 8);
 
         if (name.length() > 255) {

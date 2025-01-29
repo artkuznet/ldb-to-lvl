@@ -25,11 +25,15 @@ public class Bitmap {
     }
 
     public String getExtension() {
-        return switch (type) {
-            case 0 -> ".tga";
-            case 3 -> ".pcx";
-            case 4 -> ".jpg";
-            default -> "";
-        };
+        switch (type) {
+            case 0:
+                return ".tga";
+            case 3:
+                return ".pcx";
+            case 4:
+                return ".jpg";
+            default:
+                return "";
+        }
     }
 }

@@ -12,7 +12,7 @@ public class MeshBuilder {
         Map<LvlPolygon.Edge, Integer> edgesPolygons = new HashMap<>();
         for (int i = 0; i < lvlPolygons.size(); i++) {
             for (int j = 0; j < lvlPolygons.get(i).getEdges().length; j++) {
-                var edg = lvlPolygons.get(i).getEdges()[j];
+                LvlPolygon.Edge edg = lvlPolygons.get(i).getEdges()[j];
                 if (edgesPolygons.containsKey(edg)) {
                     edgesPolygons.put(edg, edgesPolygons.get(edg) + 1);
                 } else {
@@ -21,26 +21,26 @@ public class MeshBuilder {
             }
         }
 
-        var megaEdges = edgesPolygons.entrySet().stream()
+        Set<LvlPolygon.Edge> megaEdges = edgesPolygons.entrySet().stream()
                 .filter(edgeIntegerEntry -> edgeIntegerEntry.getValue() > 2)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
 
-        var singleEdges = edgesPolygons.entrySet().stream()
+        Set<LvlPolygon.Edge> singleEdges = edgesPolygons.entrySet().stream()
                 .filter(edgeIntegerEntry -> edgeIntegerEntry.getValue() == 1)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
 
         for (int j = 0; j < lvlPolygons.size(); j++) {
-            var p1 = lvlPolygons.get(j);
-            var poly1Edges = p1.getEdges();
+            LvlPolygon p1 = lvlPolygons.get(j);
+            LvlPolygon.Edge[] poly1Edges = p1.getEdges();
 
             for (int i = 0; i < lvlPolygons.size(); i++) {
                 if (i == j) {
                     continue;
                 }
 
-                var p2 = lvlPolygons.get(i);
+                LvlPolygon p2 = lvlPolygons.get(i);
 
                 if (p1.geometryPolyGroup != 0
                         && p2.geometryPolyGroup != 0
@@ -50,12 +50,12 @@ public class MeshBuilder {
                     continue;
                 }
 
-                var poly2Edges = p2.getEdges();
+                LvlPolygon.Edge[] poly2Edges = p2.getEdges();
 
-                var b = false;
+                boolean b = false;
 
-                for (var e1 : poly1Edges) {
-                    for (var e2 : poly2Edges) {
+                for (LvlPolygon.Edge e1 : poly1Edges) {
+                    for (LvlPolygon.Edge e2 : poly2Edges) {
 
                         if ((megaEdges.contains(e1) || megaEdges.contains(e2)) && containsRoom) {
                             continue;
@@ -68,10 +68,10 @@ public class MeshBuilder {
                             break;
                         }
 
-                        var vtx1 = List.of(lvlVertexList.get(e1.getFrom()).clone(), lvlVertexList.get(e1.getTo()).clone());
-                        var vtx2 = List.of(lvlVertexList.get(e2.getFrom()).clone(), lvlVertexList.get(e2.getTo()).clone());
+                        List<Vector3D> vtx1 = Arrays.asList(lvlVertexList.get(e1.getFrom()).clone(), lvlVertexList.get(e1.getTo()).clone());
+                        List<Vector3D> vtx2 = Arrays.asList(lvlVertexList.get(e2.getFrom()).clone(), lvlVertexList.get(e2.getTo()).clone());
 
-                        var nodrawMaterials = List.of(
+                        List<String> nodrawMaterials = Arrays.asList(
                                 "ai_node_collision_nodraw",
                                 "cameracollision",
                                 "charactercollision_nodraw",
@@ -107,19 +107,19 @@ public class MeshBuilder {
             }
         }
 
-        var groups = new ArrayList<List<LvlPolygon>>();
+        List<List<LvlPolygon>> groups = new ArrayList<>();
         lvlPolygons.forEach(lvlPolygon -> lvlPolygon.grouped = false);
 
-        var allCollected = false;
+        boolean allCollected = false;
         do {
-            var notGroupedPolygon = lvlPolygons.stream().filter(p -> !p.grouped).findFirst().orElse(null);
+            LvlPolygon notGroupedPolygon = lvlPolygons.stream().filter(p -> !p.grouped).findFirst().orElse(null);
 
             if (Objects.isNull(notGroupedPolygon)) {
                 allCollected = true;
                 break;
             }
 
-            var collection = new ArrayList<Short>();
+            List<Short> collection = new ArrayList<>();
             collectPolygons(collection, lvlPolygons, notGroupedPolygon.index);
 
             if (collection.isEmpty()) {
@@ -130,8 +130,8 @@ public class MeshBuilder {
                     collection.stream()
                             .map(idx -> lvlPolygons.stream()
                                     .filter(p -> p.index == idx).findFirst()
-                                    .orElseThrow()
-                            ).toList()
+                                    .orElseThrow(null)
+                            ).collect(Collectors.toList())
             );
 
         } while (!allCollected);
@@ -142,7 +142,7 @@ public class MeshBuilder {
     }
 
     private static void collectPolygons(List<Short> container, List<LvlPolygon> polygons, Short pIndex) {
-        var p = polygons.stream().filter(lvlPolygon -> lvlPolygon.index == pIndex).findFirst().orElseThrow();
+        LvlPolygon p = polygons.stream().filter(lvlPolygon -> lvlPolygon.index == pIndex).findFirst().orElseThrow(null);
 
         if (p.grouped || container.contains(p.index)) {
             p.grouped = true;
@@ -152,7 +152,7 @@ public class MeshBuilder {
         p.grouped = true;
         container.add(p.index);
 
-        for (var n : p.neighborIndices) {
+        for (Short n : p.neighborIndices) {
             collectPolygons(container, polygons, n);
         }
     }

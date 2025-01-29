@@ -59,13 +59,12 @@ public class Mesh extends MaxObject {
     }
 
     public Mesh optimize() {
-        var newVertices = new ArrayList<Vector3D>();
+        List<Vector3D> newVertices = new ArrayList<>();
 
         for (LvlPolygon polygon : polygons) {
             for (int i = 0; i < polygon.getEdges().length; i++) {
-
-                var vFrom = vertices[polygon.getEdges()[i].getFrom()].clone();
-                var vTo = vertices[polygon.getEdges()[i].getTo()].clone();
+                Vector3D vFrom = vertices[polygon.getEdges()[i].getFrom()].clone();
+                Vector3D vTo = vertices[polygon.getEdges()[i].getTo()].clone();
 
                 if (!newVertices.contains(vFrom)) {
                     newVertices.add(vFrom);
@@ -79,9 +78,9 @@ public class Mesh extends MaxObject {
             }
         }
 
-        vertices = newVertices.toArray(Vector3D[]::new);
+        vertices = newVertices.toArray(new Vector3D[0]);
 
-        for (var p : this.polygons) {
+        for (LvlPolygon p : this.polygons) {
             p.parentMesh = this;
         }
 
@@ -89,36 +88,36 @@ public class Mesh extends MaxObject {
     }
 
     public Mesh joinPolygons() {
-        for (var polygon : polygons) {
+        for (LvlPolygon polygon : polygons) {
             polygon.calculateTriangles();
         }
 
-        var polygonList = new ArrayList<>(Arrays.stream(this.polygons).toList());
+        List<LvlPolygon> polygonList = new ArrayList<>(Arrays.stream(this.polygons).collect(Collectors.toList()));
 
         polygonList.forEach(polygon -> {
-            var neighborsToJoin = polygonList.stream()
+            List<Short> neighborsToJoin = polygonList.stream()
                     .filter(p -> p.index != polygon.index
                             && p.normal.clone().softSmooth().equals(polygon.normal.clone().softSmooth())
                             && p.getMaterialName().equals(polygon.getMaterialName())
                             && p.getBitmapName().equals(polygon.getBitmapName())
                             && LvlPolygon.hasSharedEdgeAndUV(p, polygon)
                     )
-                    .map(LvlPolygon::getIndex).toList();
+                    .map(LvlPolygon::getIndex).collect(Collectors.toList());
             polygon.neighborToJoinIndices = neighborsToJoin;
         });
 
-        var groupsToJoin = new ArrayList<List<LvlPolygon>>();
+        List<List<LvlPolygon>> groupsToJoin = new ArrayList<List<LvlPolygon>>();
 
-        var allCollected = false;
+        boolean allCollected = false;
         do {
-            var notJoinedPolygon = polygonList.stream().filter(p -> !p.joined).findFirst().orElse(null);
+            LvlPolygon notJoinedPolygon = polygonList.stream().filter(p -> !p.joined).findFirst().orElse(null);
 
             if (Objects.isNull(notJoinedPolygon)) {
                 allCollected = true;
                 break;
             }
 
-            var collection = new ArrayList<Short>();
+            List<Short> collection = new ArrayList<>();
             collectPolygonsToJoin(collection, polygonList, notJoinedPolygon.index);
 
             if (collection.isEmpty()) {
@@ -129,32 +128,31 @@ public class Mesh extends MaxObject {
                     collection.stream()
                             .map(idx -> polygonList.stream()
                                     .filter(p -> p.index == idx).findFirst()
-                                    .orElseThrow()
-                            ).toList()
+                                    .orElseThrow(null)
+                            ).collect(Collectors.toList())
             );
 
         } while (!allCollected);
 
-        var finalList = new ArrayList<LvlPolygon>();
+        List<LvlPolygon> finalList = new ArrayList<>();
 
-        for (var group : groupsToJoin) {
+        for (List<LvlPolygon> group : groupsToJoin) {
             if (group.size() == 1) {
                 finalList.add(group.get(0));
             } else {
-                var mutableGroup = new ArrayList<>(group);
-                var p = mutableGroup.remove(0);
+                List<LvlPolygon> mutableGroup = new ArrayList<>(group);
+                LvlPolygon p = mutableGroup.remove(0);
                 finalList.add(p.join(mutableGroup));
             }
         }
 
-        this.polygons = finalList.toArray(LvlPolygon[]::new);
+        this.polygons = finalList.toArray(new LvlPolygon[0]);
 
         return this;
     }
 
     private void collectPolygonsToJoin(List<Short> container, List<LvlPolygon> polygons, Short pIndex) {
-
-        var p = polygons.stream().filter(lvlPolygon -> lvlPolygon.index == pIndex).findFirst().orElseThrow();
+        LvlPolygon p = polygons.stream().filter(lvlPolygon -> lvlPolygon.index == pIndex).findFirst().orElseThrow(null);
 
         if (p.joined || container.contains(p.index)) {
             p.joined = true;
@@ -164,20 +162,20 @@ public class Mesh extends MaxObject {
         p.joined = true;
         container.add(p.index);
 
-        for (var n : p.neighborToJoinIndices) {
+        for (Short n : p.neighborToJoinIndices) {
             collectPolygonsToJoin(container, polygons, n);
         }
     }
 
     public Mesh buildPolyGroups() {
-        var groupedPolygons = Arrays.stream(this.polygons).filter(p -> p.geometryPolyGroup != 0)
+        Map<Integer, List<LvlPolygon>> groupedPolygons = Arrays.stream(this.polygons).filter(p -> p.geometryPolyGroup != 0)
                 .collect(Collectors.groupingBy(LvlPolygon::getGeometryPolyGroup));
 
         if (!groupedPolygons.isEmpty()) {
-            var pgList = new ArrayList<PolyGroup>();
+            List<PolyGroup> pgList = new ArrayList<>();
 
-            for (var polyGroupId : groupedPolygons.keySet()) {
-                var pg = new PolyGroup();
+            for (Integer polyGroupId : groupedPolygons.keySet()) {
+                PolyGroup pg = new PolyGroup();
 
                 pg.setName("New polygroup");
 
@@ -216,7 +214,7 @@ public class Mesh extends MaxObject {
                 pgList.add(pg);
             }
 
-            this.polyGroups = pgList.toArray(PolyGroup[]::new);
+            this.polyGroups = pgList.toArray(new PolyGroup[0]);
         }
 
         return this;
@@ -229,38 +227,38 @@ public class Mesh extends MaxObject {
     }
 
     public void calculatePosition() {
-        var transformPosition = new Vector3D(0, 0, 0);
-        var transformVertices = Arrays.stream(this.vertices).map(Vector3D::clone).toList();
+        Vector3D transformPosition = new Vector3D(0, 0, 0);
+        List<Vector3D> transformVertices = Arrays.stream(this.vertices).map(Vector3D::clone).collect(Collectors.toList());
 
         MaxObject object = this;
 
         while (object != null) {
-            var t = object.getTransform();
+            double[][] t = object.getTransform();
 
-            var thisPos = new Vector3D(t[3][0], t[3][1], t[3][2]);
-            var thisMatrix = new double[][]{t[0], t[1], t[2]};
+            Vector3D thisPos = new Vector3D(t[3][0], t[3][1], t[3][2]);
+            double[][] thisMatrix = new double[][]{t[0], t[1], t[2]};
 
-            transformVertices = transformVertices.stream().map(v -> v.rotate(thisMatrix)).toList();
+            transformVertices = transformVertices.stream().map(v -> v.rotate(thisMatrix)).collect(Collectors.toList());
             transformPosition = transformPosition.rotate(thisMatrix);
             transformPosition = transformPosition.minus(thisPos.clone().multiply(-1));
 
             object = object.parentObject;
         }
 
-        var minX = transformVertices.stream().map(Vector3D::getX).min(Double::compareTo).orElseThrow();
-        var maxX = transformVertices.stream().map(Vector3D::getX).max(Double::compareTo).orElseThrow();
+        Double minX = transformVertices.stream().map(Vector3D::getX).min(Double::compareTo).orElseThrow(null);
+        Double maxX = transformVertices.stream().map(Vector3D::getX).max(Double::compareTo).orElseThrow(null);
 
-        var minY = transformVertices.stream().map(Vector3D::getY).min(Double::compareTo).orElseThrow();
-        var maxY = transformVertices.stream().map(Vector3D::getY).max(Double::compareTo).orElseThrow();
+        Double minY = transformVertices.stream().map(Vector3D::getY).min(Double::compareTo).orElseThrow(null);
+        Double maxY = transformVertices.stream().map(Vector3D::getY).max(Double::compareTo).orElseThrow(null);
 
-        var minZ = transformVertices.stream().map(Vector3D::getZ).min(Double::compareTo).orElseThrow();
-        var maxZ = transformVertices.stream().map(Vector3D::getZ).max(Double::compareTo).orElseThrow();
+        Double minZ = transformVertices.stream().map(Vector3D::getZ).min(Double::compareTo).orElseThrow(null);
+        Double maxZ = transformVertices.stream().map(Vector3D::getZ).max(Double::compareTo).orElseThrow(null);
 
-        var min = new Vector3D(minX, minY, minZ);
-        var max = new Vector3D(maxX, maxY, maxZ);
+        Vector3D min = new Vector3D(minX, minY, minZ);
+        Vector3D max = new Vector3D(maxX, maxY, maxZ);
 
-        var v1 = transformPosition.clone().minus(min.clone().multiply(-1));
-        var v2 = transformPosition.clone().minus(max.clone().multiply(-1));
+        Vector3D v1 = transformPosition.clone().minus(min.clone().multiply(-1));
+        Vector3D v2 = transformPosition.clone().minus(max.clone().multiply(-1));
 
         this.position = new double[]{v1.getX(), v1.getY(), v1.getZ(), v2.getX(), v2.getY(), v2.getZ(), 0};
     }

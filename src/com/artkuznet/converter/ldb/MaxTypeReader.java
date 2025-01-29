@@ -11,39 +11,61 @@ public final class MaxTypeReader extends Reader {
     }
 
     public Object readObject() {
-        var type = readByte();
+        byte type = readByte();
 
-        return switch (type) {
-            case 0x00 -> readInt();
-            case 0x02 -> readInt();
-            case 0x03 -> readUInt(); // unsigned
-            case 0x0D -> readObjectString();
-            case 0x0E -> (int) readByte(); // bool
-            case 0x0F -> readUInt3(); // unsigned
-            case 0x09 -> readFloat();
-            case 0x10 -> readUShort(); // unsigned
-            case 0x11 -> readUByte(); // unsigned
-            case 0x12 -> readInt3();
-            case 0x13 -> (int) readShort();
-            case 0x14 -> (int) readByte();
-            case 0x15 -> readVector2D();
-            case 0x16 -> readVector3D();
-            case 0x19 -> readMatrix3x3();
-            case 0x1A -> readMatrix4x3();
-            default -> throw new RuntimeException("readObject wrong type " + type);
-        };
+        switch (type) {
+            case 0x00:
+                return readInt();
+            case 0x02:
+                return readInt();
+            case 0x03:
+                return readUInt(); // unsigned
+            case 0x0D:
+                return readObjectString();
+            case 0x0E:
+                return (int) readByte(); // bool
+            case 0x0F:
+                return readUInt3(); // unsigned
+            case 0x09:
+                return readFloat();
+            case 0x10:
+                return readUShort(); // unsigned
+            case 0x11:
+                return readUByte(); // unsigned
+            case 0x12:
+                return readInt3();
+            case 0x13:
+                return (int) readShort();
+            case 0x14:
+                return (int) readByte();
+            case 0x15:
+                return readVector2D();
+            case 0x16:
+                return readVector3D();
+            case 0x19:
+                return readMatrix3x3();
+            case 0x1A:
+                return readMatrix4x3();
+            default:
+                throw new RuntimeException("readObject wrong type " + type);
+        }
     }
 
     private String readObjectString() {
-        var type = readByte();
+        byte type = readByte();
 
-        return switch (type) {
-            case 0x11 -> readString(readByte());
-            case 0x12 -> readString(readInt3());
-            case 0x13 -> readString(readShort());
-            case 0x14 -> readString(readByte());
-            default -> throw new RuntimeException("readObjectString wrong type " + type);
-        };
+        switch (type) {
+            case 0x11:
+                return readString(readByte());
+            case 0x12:
+                return readString(readInt3());
+            case 0x13:
+                return readString(readShort());
+            case 0x14:
+                return readString(readByte());
+            default:
+                throw new RuntimeException("readObjectString wrong type " + type);
+        }
     }
 
     private int readInt3() {
@@ -82,7 +104,7 @@ public final class MaxTypeReader extends Reader {
     }
 
     private int readUInt3() {
-        var x = readInt3();
+        int x = readInt3();
 
         if (x < 0) {
             throw new RuntimeException("readUInt3 value < 0");

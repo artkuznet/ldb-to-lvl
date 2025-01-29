@@ -46,18 +46,18 @@ public class Geometry {
     }
 
     public VertexUV getUvSize() {
-        var minU = uv.stream().map(VertexUV::getU).min(Float::compareTo).orElseThrow();
-        var maxU = uv.stream().map(VertexUV::getU).max(Float::compareTo).orElseThrow();
+        Float minU = uv.stream().map(VertexUV::getU).min(Float::compareTo).orElseThrow(null);
+        Float maxU = uv.stream().map(VertexUV::getU).max(Float::compareTo).orElseThrow(null);
 
-        var minV = uv.stream().map(VertexUV::getV).min(Float::compareTo).orElseThrow();
-        var maxV = uv.stream().map(VertexUV::getV).max(Float::compareTo).orElseThrow();
+        Float minV = uv.stream().map(VertexUV::getV).min(Float::compareTo).orElseThrow(null);
+        Float maxV = uv.stream().map(VertexUV::getV).max(Float::compareTo).orElseThrow(null);
 
         return new VertexUV(maxU - minU, maxV - minV);
     }
 
     public double[] getTextureOffset() {
-        var maxU = uv.stream().map(VertexUV::getU).max(Float::compareTo).orElseThrow();
-        var maxV = uv.stream().map(VertexUV::getV).max(Float::compareTo).orElseThrow();
+        Float maxU = uv.stream().map(VertexUV::getU).max(Float::compareTo).orElseThrow(null);
+        Float maxV = uv.stream().map(VertexUV::getV).max(Float::compareTo).orElseThrow(null);
 
         maxU = uv.get(0).getU();
         maxV = uv.get(0).getV();
@@ -66,7 +66,7 @@ public class Geometry {
     }
 
     public Vector3D getFirstVertex() {
-        var v = vertices.get(0);
+        Vertex v = vertices.get(0);
 
         return new Vector3D(v.getX(), v.getY(), v.getZ());
     }

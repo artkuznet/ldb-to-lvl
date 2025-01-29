@@ -2,8 +2,16 @@ package com.artkuznet.converter.lvl;
 
 import com.artkuznet.converter.*;
 import com.artkuznet.converter.ldb.MaxLDB;
+import com.artkuznet.converter.ldb.character.Character;
 import com.artkuznet.converter.ldb.dynamicmesh.LdbDynamicMesh;
+import com.artkuznet.converter.ldb.fsm.LdbFSM;
 import com.artkuznet.converter.ldb.material.Material;
+import com.artkuznet.converter.ldb.polygon.Geometry;
+import com.artkuznet.converter.ldb.polygon.Polygon;
+import com.artkuznet.converter.ldb.room.Room;
+import com.artkuznet.converter.ldb.staticmesh.StaticMesh;
+import com.artkuznet.converter.ldb.vertex.Vertex;
+import com.artkuznet.converter.ldb.vertex.VertexUV;
 import com.artkuznet.converter.mapper.DynamicDataMapper;
 import com.artkuznet.converter.mapper.FsmDataMapper;
 import com.artkuznet.converter.maxed.*;
@@ -93,7 +101,7 @@ public class LVL {
         bitmaps = ldb.getTextures()
                 .getList().stream()
                 .map(texture -> new Bitmap(texture.getFilePath(), texture.getFileType(), texture.getData()))
-                .toList();
+                .collect(Collectors.toList());
 
         materials = new ArrayList<>();
 
@@ -101,59 +109,61 @@ public class LVL {
                 .collect(Collectors.groupingBy(Material::getCategoryName))
                 .forEach((materialName, materialBitmapList) -> {
 
-                    var materialBitmaps = materialBitmapList.stream().map(material -> Objects.nonNull(material.getAlphaTexture())
-                            ? new LvlMaterial.BitmapLayer(material.getDiffuseTexture().getFilePath(), material.getMaterialName(), 1, material.getAlphaTexture().getFilePath())
-                            : new LvlMaterial.MaterialBitmap(material.getDiffuseTexture().getFilePath(), material.getMaterialName(), 0)).toList();
+                    List<LvlMaterial.MaterialBitmap> materialBitmaps = materialBitmapList.stream()
+                            .map(material -> Objects.nonNull(material.getAlphaTexture())
+                                    ? new LvlMaterial.BitmapLayer(material.getDiffuseTexture().getFilePath(), material.getMaterialName(), 1, material.getAlphaTexture().getFilePath())
+                                    : new LvlMaterial.MaterialBitmap(material.getDiffuseTexture().getFilePath(), material.getMaterialName(), 0))
+                            .collect(Collectors.toList());
 
-                    materials.add(new LvlMaterial(materialName, materialBitmaps.toArray(LvlMaterial.MaterialBitmap[]::new)));
+                    materials.add(new LvlMaterial(materialName, materialBitmaps.toArray(new LvlMaterial.MaterialBitmap[0])));
                 });
 
         final short[] polygonsCounter = {-1};
         final int[] meshCounter = {-1};
         final int[] pointlightCounter = {-1};
 
-        var rooms = ldb.getRooms().getList().stream().map(room -> {
-            var staticMeshId = room.getStaticMeshes().stream().findFirst().orElseThrow();
-            var roomMesh = ldb.getStaticMeshes().getById(staticMeshId);
+        List<Mesh> rooms = ldb.getRooms().getList().stream().map(room -> {
+            Integer staticMeshId = room.getStaticMeshes().stream().findFirst().orElseThrow(null);
+            StaticMesh roomMesh = ldb.getStaticMeshes().getById(staticMeshId);
 
-            var roomMeshPolygonsCount = roomMesh.getPolygons().getList().size();
+            int roomMeshPolygonsCount = roomMesh.getPolygons().getList().size();
 
-            var geometries = IntStream.range(0, roomMeshPolygonsCount)
+            List<Geometry> geometries = IntStream.range(0, roomMeshPolygonsCount)
                     .mapToObj(roomMesh::constructPolygon)
                     .collect(Collectors.toCollection(ArrayList::new));
 
-            var lvlVertexList = new ArrayList<Vector3D>();
+            List<Vector3D> lvlVertexList = new ArrayList<>();
             geometries.forEach(geometry -> geometry.getVertices().forEach(vertex -> {
-                var point3d = new Vector3D(vertex.getX(), vertex.getY(), vertex.getZ());
+                Vector3D point3d = new Vector3D(vertex.getX(), vertex.getY(), vertex.getZ());
                 if (!lvlVertexList.contains(point3d)) {
                     lvlVertexList.add(point3d);
                 }
             }));
 
-            final var lvlPolygons = new ArrayList<LvlPolygon>();
+            final List<LvlPolygon> lvlPolygons = new ArrayList<>();
             geometries.forEach(geometry -> {
-                var vertices = geometry.getVertices();
-                var sizeUV = geometry.getUvSize();
+                List<Vertex> vertices = geometry.getVertices();
+                VertexUV sizeUV = geometry.getUvSize();
 
-                var geometryPolygon = roomMesh.getPolygons().getById(geometry.getPolygonId());
-                var normal = geometryPolygon.getNormal();
+                Polygon geometryPolygon = roomMesh.getPolygons().getById(geometry.getPolygonId());
+                Vertex normal = geometryPolygon.getNormal();
 
-                var edges = new LvlPolygon.Edge[vertices.size()];
+                LvlPolygon.Edge[] edges = new LvlPolygon.Edge[vertices.size()];
                 for (int i = 0; i < edges.length - 1; i++) {
-                    var vFrom = vertices.get(i);
-                    var p3dFrom = new Vector3D(vFrom.getX(), vFrom.getY(), vFrom.getZ());
-                    var vertexIndexFrom = lvlVertexList.indexOf(p3dFrom);
+                    Vertex vFrom = vertices.get(i);
+                    Vector3D p3dFrom = new Vector3D(vFrom.getX(), vFrom.getY(), vFrom.getZ());
+                    int vertexIndexFrom = lvlVertexList.indexOf(p3dFrom);
 
-                    var vTo = vertices.get(i + 1);
-                    var p3dTo = new Vector3D(vTo.getX(), vTo.getY(), vTo.getZ());
-                    var vertexIndexTo = lvlVertexList.indexOf(p3dTo);
+                    Vertex vTo = vertices.get(i + 1);
+                    Vector3D p3dTo = new Vector3D(vTo.getX(), vTo.getY(), vTo.getZ());
+                    int vertexIndexTo = lvlVertexList.indexOf(p3dTo);
 
                     edges[i] = new LvlPolygon.Edge(vertexIndexFrom, vertexIndexTo);
                 }
 
                 edges[edges.length - 1] = new LvlPolygon.Edge(edges[edges.length - 2].getTo(), edges[0].getFrom());
 
-                var poly = new LvlPolygon(
+                LvlPolygon poly = new LvlPolygon(
                         edges,
                         geometry.getMaterial().getCategoryName(),
                         geometry.getMaterial().getMaterialName(),
@@ -166,12 +176,12 @@ public class LVL {
                 poly.unkVector1 = poly.getDefaultUnk5();
 
                 poly.sizeUV = new double[]{sizeUV.getU(), sizeUV.getV()};
-                poly.UV = geometry.getUv().stream().map(Vector3D::new).toList();
+                poly.UV = geometry.getUv().stream().map(Vector3D::new).collect(Collectors.toList());
 
                 poly.unkTransform = poly.getDefaultTransform();
                 poly.pointPolygonIndex = -1;
 
-                poly.testVertices = vertices.stream().map(v -> new Vector3D(v.getX(), v.getY(), v.getZ())).toList();
+                poly.testVertices = vertices.stream().map(v -> new Vector3D(v.getX(), v.getY(), v.getZ())).collect(Collectors.toList());
 
                 poly.index = ++polygonsCounter[0];
 
@@ -185,31 +195,31 @@ public class LVL {
             });
 
             room.getExits().stream().map(exitName -> ldb.getExits().findByName(exitName)).forEach(exit -> {
-                var vertices = exit.getVertices().getList();
+                List<Vertex> vertices = exit.getVertices().getList();
 
                 vertices.forEach(vertex -> {
-                    var point3d = new Vector3D(vertex.getX(), vertex.getY(), vertex.getZ());
+                    Vector3D point3d = new Vector3D(vertex.getX(), vertex.getY(), vertex.getZ());
                     if (!lvlVertexList.contains(point3d)) {
                         lvlVertexList.add(point3d);
                     }
                 });
 
-                var edges = new LvlPolygon.Edge[vertices.size()];
+                LvlPolygon.Edge[] edges = new LvlPolygon.Edge[vertices.size()];
                 for (int i = 0; i < edges.length - 1; i++) {
-                    var vFrom = vertices.get(i);
-                    var p3dFrom = new Vector3D(vFrom.getX(), vFrom.getY(), vFrom.getZ());
-                    var vertexIndexFrom = lvlVertexList.indexOf(p3dFrom);
+                    Vertex vFrom = vertices.get(i);
+                    Vector3D p3dFrom = new Vector3D(vFrom.getX(), vFrom.getY(), vFrom.getZ());
+                    int vertexIndexFrom = lvlVertexList.indexOf(p3dFrom);
 
-                    var vTo = vertices.get(i + 1);
-                    var p3dTo = new Vector3D(vTo.getX(), vTo.getY(), vTo.getZ());
-                    var vertexIndexTo = lvlVertexList.indexOf(p3dTo);
+                    Vertex vTo = vertices.get(i + 1);
+                    Vector3D p3dTo = new Vector3D(vTo.getX(), vTo.getY(), vTo.getZ());
+                    int vertexIndexTo = lvlVertexList.indexOf(p3dTo);
 
                     edges[i] = new LvlPolygon.Edge(vertexIndexFrom, vertexIndexTo);
                 }
                 edges[edges.length - 1] = new LvlPolygon.Edge(edges[edges.length - 2].getTo(), edges[0].getFrom());
 
-                var normal = new Vector3D(exit.getNormal().getX(), exit.getNormal().getY(), exit.getNormal().getZ());
-                var lvlExit = new LvlExit(edges, exit.getShortName(), normal, exit.getExitName(), exit.getParentRoomName());
+                Vector3D normal = new Vector3D(exit.getNormal().getX(), exit.getNormal().getY(), exit.getNormal().getZ());
+                LvlExit lvlExit = new LvlExit(edges, exit.getShortName(), normal, exit.getExitName(), exit.getParentRoomName());
 
                 lvlExit.unkVertex1 = new Vector3D(vertices.get(0).getX(), vertices.get(0).getY(), vertices.get(0).getZ());
                 lvlExit.unkVertex2 = new Vector3D(vertices.get(0).getX(), vertices.get(0).getY(), vertices.get(0).getZ());
@@ -220,97 +230,101 @@ public class LVL {
 
                 lvlExit.unkTransform = lvlExit.getDefaultTransform();
 
-                lvlExit.testVertices = vertices.stream().map(v -> new Vector3D(v.getX(), v.getY(), v.getZ())).toList();
+                lvlExit.testVertices = vertices.stream()
+                        .map(v -> new Vector3D(v.getX(), v.getY(), v.getZ()))
+                        .collect(Collectors.toList());
 
                 lvlExit.index = ++polygonsCounter[0];
 
-                var defaultScaleUV = lvlExit.getDefaultScaleUV();
+                Vector3D[] defaultScaleUV = lvlExit.getDefaultScaleUV();
                 lvlExit.scaleU = defaultScaleUV[0];
                 lvlExit.scaleV = defaultScaleUV[1];
 
                 lvlPolygons.add(lvlExit);
             });
 
-            var roomName = room.getName().replaceFirst("::", "");
+            String roomName = room.getName().replaceFirst("::", "");
 
             System.out.println("Room: " + roomName);
 
 
-            var groups = MeshBuilder.groupPolygons(lvlPolygons, lvlVertexList, true, roomName);
+            List<List<LvlPolygon>> groups = MeshBuilder.groupPolygons(lvlPolygons, lvlVertexList, true, roomName);
 
 
-            var rooommm = groups.stream().filter(polygons -> polygons.stream().anyMatch(p -> p instanceof LvlExit)).toList();
-            var emptyRoom = new HashSet<LvlPolygon>();
+            List<List<LvlPolygon>> rooommm = groups.stream()
+                    .filter(polygons -> polygons.stream().anyMatch(p -> p instanceof LvlExit))
+                    .collect(Collectors.toList());
+            Set<LvlPolygon> emptyRoom = new HashSet<>();
             rooommm.forEach(emptyRoom::addAll);
 
 
-            var meshes = groups.stream().filter(polygons -> polygons.stream().noneMatch(p -> p instanceof LvlExit)).toList();
+            List<List<LvlPolygon>> meshes = groups.stream()
+                    .filter(polygons -> polygons.stream().noneMatch(p -> p instanceof LvlExit))
+                    .collect(Collectors.toList());
 
-            meshes = new ArrayList<>(MeshBuilder.groupPolygons(meshes.stream().flatMap(List::stream).toList(), lvlVertexList, false, roomName));
+            meshes = new ArrayList<>(MeshBuilder.groupPolygons(meshes.stream().flatMap(List::stream).collect(Collectors.toList()), lvlVertexList, false, roomName));
 
 
-            var childs = new ArrayList<MaxObject>();
+            List<MaxObject> childs = new ArrayList<>();
 
-            for (var m : meshes) {
-                var childMesh = new Mesh();
+            for (List<LvlPolygon> m : meshes) {
+                Mesh childMesh = new Mesh();
 
                 childMesh.setName("Mesh_" + (++meshCounter[0]));
                 childMesh.setFlipFaces(false);
-                childMesh.setVertices(lvlVertexList.toArray(Vector3D[]::new));
-                childMesh.setPolygons(m.toArray(LvlPolygon[]::new));
+                childMesh.setVertices(lvlVertexList.toArray(new Vector3D[0]));
+                childMesh.setPolygons(m.toArray(new LvlPolygon[0]));
                 childMesh.setPolyGroups(new PolyGroup[]{});
 
                 childs.add(childMesh.optimize().joinPolygons().buildPolyGroups());
             }
 
-            var dynamicMeshes = ldb.getDynamicMeshes().getList().stream()
+            List<DynamicMesh> dynamicMeshes = ldb.getDynamicMeshes().getList().stream()
                     .filter(d -> d.getRoomName().equals(room.getName()))
                     .map(new Function<LdbDynamicMesh, DynamicMesh>() {
                         @Override
                         public DynamicMesh apply(LdbDynamicMesh ldbDynamicMesh) {
-                            var dynamic = new DynamicMesh();
+                            DynamicMesh dynamic = new DynamicMesh();
 
-                            var dynamicPolygonsCount = ldbDynamicMesh.getPolygons().getList().size();
+                            int dynamicPolygonsCount = ldbDynamicMesh.getPolygons().getList().size();
 
-                            var geometries = IntStream.range(0, dynamicPolygonsCount)
+                            List<Geometry> geometries = IntStream.range(0, dynamicPolygonsCount)
                                     .mapToObj(ldbDynamicMesh::constructPolygon)
                                     .collect(Collectors.toCollection(ArrayList::new));
 
-                            var lvlVertexList = new ArrayList<Vector3D>();
+                            List<Vector3D> lvlVertexList = new ArrayList<>();
                             geometries.forEach(geometry -> geometry.getVertices().forEach(vertex -> {
-                                var point3d = new Vector3D(vertex.getX(), vertex.getY(), vertex.getZ());
+                                Vector3D point3d = new Vector3D(vertex.getX(), vertex.getY(), vertex.getZ());
                                 if (!lvlVertexList.contains(point3d)) {
                                     lvlVertexList.add(point3d);
                                 }
                             }));
 
-                            var dynamicPolygons = new ArrayList<LvlPolygon>();
-
+                            List<LvlPolygon> dynamicPolygons = new ArrayList<>();
 
                             geometries.forEach(geometry -> {
-                                var vertices = geometry.getVertices();
-                                var sizeUV = geometry.getUvSize();
+                                List<Vertex> vertices = geometry.getVertices();
+                                VertexUV sizeUV = geometry.getUvSize();
 
-                                var geometryPolygon = ldbDynamicMesh.getPolygons().getById(geometry.getPolygonId());
-                                var normal = geometryPolygon.getNormal();
+                                Polygon geometryPolygon = ldbDynamicMesh.getPolygons().getById(geometry.getPolygonId());
+                                Vertex normal = geometryPolygon.getNormal();
 
-
-                                var edges = new LvlPolygon.Edge[vertices.size()];
+                                LvlPolygon.Edge[] edges = new LvlPolygon.Edge[vertices.size()];
                                 for (int i = 0; i < edges.length - 1; i++) {
-                                    var vFrom = vertices.get(i);
-                                    var p3dFrom = new Vector3D(vFrom.getX(), vFrom.getY(), vFrom.getZ());
-                                    var vertexIndexFrom = lvlVertexList.indexOf(p3dFrom);
+                                    Vertex vFrom = vertices.get(i);
+                                    Vector3D p3dFrom = new Vector3D(vFrom.getX(), vFrom.getY(), vFrom.getZ());
+                                    int vertexIndexFrom = lvlVertexList.indexOf(p3dFrom);
 
-                                    var vTo = vertices.get(i + 1);
-                                    var p3dTo = new Vector3D(vTo.getX(), vTo.getY(), vTo.getZ());
-                                    var vertexIndexTo = lvlVertexList.indexOf(p3dTo);
+                                    Vertex vTo = vertices.get(i + 1);
+                                    Vector3D p3dTo = new Vector3D(vTo.getX(), vTo.getY(), vTo.getZ());
+                                    int vertexIndexTo = lvlVertexList.indexOf(p3dTo);
 
                                     edges[i] = new LvlPolygon.Edge(vertexIndexFrom, vertexIndexTo);
                                 }
 
                                 edges[edges.length - 1] = new LvlPolygon.Edge(edges[edges.length - 2].getTo(), edges[0].getFrom());
 
-                                var poly = new LvlPolygon(
+                                LvlPolygon poly = new LvlPolygon(
                                         edges,
                                         geometry.getMaterial().getCategoryName(),
                                         geometry.getMaterial().getMaterialName(),
@@ -323,14 +337,14 @@ public class LVL {
                                 poly.unkVector1 = poly.getDefaultUnk5();
 
                                 poly.sizeUV = new double[]{sizeUV.getU(), sizeUV.getV()};
-                                poly.UV = geometry.getUv().stream().map(Vector3D::new).toList();
+                                poly.UV = geometry.getUv().stream().map(Vector3D::new).collect(Collectors.toList());
 
                                 poly.unkTransform = poly.getDefaultTransform();
                                 poly.pointPolygonIndex = -1;
 
                                 poly.testVertices = vertices.stream()
                                         .map(v -> new Vector3D(v.getX(), v.getY(), v.getZ()))
-                                        .toList();
+                                        .collect(Collectors.toList());
 
                                 poly.index = ++polygonsCounter[0];
 
@@ -364,8 +378,8 @@ public class LVL {
 
                             dynamic.setFlipFaces(false);
 
-                            dynamic.setVertices(lvlVertexList.toArray(Vector3D[]::new));
-                            dynamic.setPolygons(dynamicPolygons.toArray(LvlPolygon[]::new));
+                            dynamic.setVertices(lvlVertexList.toArray(new Vector3D[0]));
+                            dynamic.setPolygons(dynamicPolygons.toArray(new LvlPolygon[0]));
                             dynamic.setTransform(ldbDynamicMesh.getTransformDouble());
 
                             dynamic.parentName = ldbDynamicMesh.getProperties().getParentDynamicMeshName();
@@ -380,14 +394,14 @@ public class LVL {
 
                             return dynamic.optimize().joinPolygons().buildPolyGroups();
                         }
-                    }).toList();
+                    }).collect(Collectors.toList());
 
             childs.addAll(dynamicMeshes);
 
-            var characters = ldb.getCharacters().getList().stream()
+            List<Enemy> characters = ldb.getCharacters().getList().stream()
                     .filter(e -> e.getRoomName().equals(room.getName()))
                     .map(character -> {
-                        var enemy = new Enemy();
+                        Enemy enemy = new Enemy();
                         enemy.setType(character.getCharacterName());
                         enemy.setName(character.getShortName());
 
@@ -397,14 +411,14 @@ public class LVL {
                         enemy.setTransform(character.getProperties().getObjectToParentTransformDouble());
 
                         return enemy;
-                    }).toList();
+                    }).collect(Collectors.toList());
 
             childs.addAll(characters);
 
-            var lights = ldb.getPointlights().getList().stream()
+            List<LvlLight> lights = ldb.getPointlights().getList().stream()
                     .filter(e -> e.getProperties().getRoomId() == room.getId())
                     .map(ldbPointLight -> {
-                        var lvlLight = new LvlLight();
+                        LvlLight lvlLight = new LvlLight();
 
                         lvlLight.setR(ldbPointLight.getR());
                         lvlLight.setG(ldbPointLight.getG());
@@ -422,14 +436,14 @@ public class LVL {
                         lvlLight.setTransform(ldbPointLight.getProperties().getObjectToParentTransformDouble());
 
                         return lvlLight;
-                    }).toList();
+                    }).collect(Collectors.toList());
 
             childs.addAll(lights);
 
-            var triggers = ldb.getTriggers().getList().stream()
+            List<LvlTrigger> triggers = ldb.getTriggers().getList().stream()
                     .filter(e -> e.getRoomName().equals(room.getName()))
                     .map(ldbTrigger -> {
-                        var lvlTrigger = new LvlTrigger();
+                        LvlTrigger lvlTrigger = new LvlTrigger();
 
                         lvlTrigger.setRadius(ldbTrigger.getRadius());
                         lvlTrigger.setName(ldbTrigger.getShortName());
@@ -441,14 +455,14 @@ public class LVL {
                         lvlTrigger.setTransform(ldbTrigger.getProperties().getObjectToParentTransformDouble());
 
                         return lvlTrigger;
-                    }).toList();
+                    }).collect(Collectors.toList());
 
             childs.addAll(triggers);
 
-            var items = ldb.getItems().getList().stream()
+            List<LevelItem> items = ldb.getItems().getList().stream()
                     .filter(e -> e.getRoomName().equals(room.getName()))
                     .map(item -> {
-                        var lvlItem = new LevelItem();
+                        LevelItem lvlItem = new LevelItem();
                         lvlItem.setItemType(item.getItemName());
                         lvlItem.setName(item.getShortName());
 
@@ -458,14 +472,14 @@ public class LVL {
                         lvlItem.setTransform(item.getProperties().getObjectToParentTransformDouble());
 
                         return lvlItem;
-                    }).toList();
+                    }).collect(Collectors.toList());
 
             childs.addAll(items);
 
-            var waypoints = ldb.getWaypoints().getList().stream()
+            List<LvlPoint> waypoints = ldb.getWaypoints().getList().stream()
                     .filter(e -> e.getRoomName().equals(room.getName()))
                     .map(waypoint -> {
-                        var lvlPoint = new LvlPoint();
+                        LvlPoint lvlPoint = new LvlPoint();
                         lvlPoint.setType(waypoint.getType());
                         lvlPoint.setName(waypoint.getShortName());
                         lvlPoint.parentName = waypoint.getProperties().getParentDynamicMeshName();
@@ -473,19 +487,19 @@ public class LVL {
                         lvlPoint.setTransform(waypoint.getProperties().getObjectToParentTransformDouble());
 
                         return lvlPoint;
-                    }).toList();
+                    }).collect(Collectors.toList());
 
             childs.addAll(waypoints);
 
-            var allChildNames = childs.stream()
+            List<String> allChildNames = childs.stream()
                     .map(o -> o.fullName.replace(".DO", "").replace(".TRIGGER", ""))
-                    .toList();
+                    .collect(Collectors.toList());
 
-            var floatingFSMs = ldb.getFSMs().getList().stream()
+            List<FloatingFSM> floatingFSMs = ldb.getFSMs().getList().stream()
                     .filter(e -> e.getRoomName().equals(room.getName()))
                     .filter(f -> !allChildNames.contains(f.getSharedName()))
                     .map(ldbFSM -> {
-                        var fsm = new FloatingFSM();
+                        FloatingFSM fsm = new FloatingFSM();
                         fsm.setName(ldbFSM.getShortName());
 
                         fsm.parentName = ldbFSM.getProperties().getParentDynamicMeshName();
@@ -498,14 +512,14 @@ public class LVL {
                         );
 
                         return fsm;
-                    }).toList();
+                    }).collect(Collectors.toList());
 
             childs.addAll(floatingFSMs);
 
-            var nestedObjects = childs.stream().filter(o -> !o.parentName.isEmpty()).toList();
-            var parentObjects = childs.stream().filter(o -> o.parentName.isEmpty()).toList();
+            List<MaxObject> nestedObjects = childs.stream().filter(o -> !o.parentName.isEmpty()).collect(Collectors.toList());
+            List<MaxObject> parentObjects = childs.stream().filter(o -> o.parentName.isEmpty()).collect(Collectors.toList());
 
-            var mesh = new Mesh();
+            Mesh mesh = new Mesh();
 
             parentObjects.forEach(parent -> {
                 parent.parentObject = mesh;
@@ -514,17 +528,17 @@ public class LVL {
 
             mesh.setName(roomName);
             mesh.setFlipFaces(true);
-            mesh.setVertices(lvlVertexList.toArray(Vector3D[]::new));
-            mesh.setPolygons(emptyRoom.toArray(LvlPolygon[]::new));
+            mesh.setVertices(lvlVertexList.toArray(new Vector3D[0]));
+            mesh.setPolygons(emptyRoom.toArray(new LvlPolygon[0]));
             mesh.setTransform(roomMesh.getTransformDouble());
             mesh.setPolyGroups(new PolyGroup[]{});
 
             mesh.childObjects.addAll(parentObjects);
 
             return mesh.optimize().joinPolygons().buildPolyGroups();
-        }).toList();
+        }).collect(Collectors.toList());
 
-        for (var room : rooms) {
+        for (Mesh room : rooms) {
             countPolygons(room);
         }
 
@@ -532,14 +546,14 @@ public class LVL {
 
         List<MaxObject> objectFlatList = new ArrayList<>(getAllObjects(rooms));
 
-        for (var obj : objectFlatList.stream().filter(
+        for (MaxObject obj : objectFlatList.stream().filter(
                 o -> !(o instanceof Mesh && !(o instanceof Dynamic))
                         && (o.parentObject instanceof Mesh)
                         && !(o.parentObject instanceof Dynamic)
                         && !o.fullName.isEmpty() && o.fullName.substring(2).split("::").length > 2
-        ).toList()
+        ).collect(Collectors.toList())
         ) {
-            var newName = new ArrayList<>(Arrays.stream(obj.fullName.substring(2).split("::")).toList());
+            ArrayList<String> newName = new ArrayList<>(Arrays.stream(obj.fullName.substring(2).split("::")).collect(Collectors.toList()));
             newName.remove(0);
             newName.remove(newName.size() - 1);
             newName.add(obj.getName());
@@ -548,19 +562,19 @@ public class LVL {
 
         rooms.forEach(room -> objectFlatList.forEach(object -> objNamesMap.putAll(getNewObjectNamesMap(object))));
 
-        var fsmMapper = new FsmDataMapper(objNamesMap);
+        FsmDataMapper fsmMapper = new FsmDataMapper(objNamesMap);
 
-        List<FSM> fsmObjects = objectFlatList.stream().filter(o -> o instanceof FSM).map(o -> (FSM) o).toList();
+        List<FSM> fsmObjects = objectFlatList.stream().filter(o -> o instanceof FSM).map(o -> (FSM) o).collect(Collectors.toList());
         fsmObjects.forEach(o -> setObjectFSMData(fsmMapper, ldb, (MaxObject) o));
 
         rooms.forEach(room -> {
-            for (var lvlPolygon : room.getPolygons()) {
+            for (LvlPolygon lvlPolygon : room.getPolygons()) {
                 if (!(lvlPolygon instanceof LvlExit)) {
                     continue;
                 }
-                var exit = (LvlExit) lvlPolygon;
+                LvlExit exit = (LvlExit) lvlPolygon;
 
-                var linkedExit = rooms.stream()
+                LvlExit linkedExit = rooms.stream()
                         .map(Mesh::getPolygons)
                         .flatMap(Arrays::stream)
                         .filter(p -> p instanceof LvlExit)
@@ -581,11 +595,11 @@ public class LVL {
     }
 
     public static List<? extends MaxObject> getAllObjects(List<? extends MaxObject> objects) {
-        var list = new ArrayList<MaxObject>();
+        List<MaxObject> list = new ArrayList<>();
 
         list.addAll(objects);
 
-        for (var o : objects) {
+        for (MaxObject o : objects) {
             list.addAll(getAllObjects(o.childObjects));
         }
 
@@ -597,7 +611,7 @@ public class LVL {
             throw new RuntimeException();
         }
 
-        var objectName = object.fullName;
+        String objectName = object.fullName;
         if (object instanceof Dynamic) {
             objectName = objectName.replace(".DO", "");
         }
@@ -606,7 +620,7 @@ public class LVL {
         }
 
         if (object instanceof Enemy) {
-            var ldbCharacter = ldb.getCharacters().findByName(object.fullName);
+            Character ldbCharacter = ldb.getCharacters().findByName(object.fullName);
 
             ((FSM) object).setFsmData(fsmMapper.toFSMData(object, ldbCharacter));
 
@@ -615,7 +629,7 @@ public class LVL {
 
         LdbDynamicMesh ldbDynamicMesh = ldb.getDynamicMeshes().findByName(object.fullName);
 
-        var ldbFsm = ldb.getFSMs().findByName(objectName);
+        LdbFSM ldbFsm = ldb.getFSMs().findByName(objectName);
         if (ldbFsm == null) {
             throw new RuntimeException("FSM not found: " + objectName);
         }
@@ -627,8 +641,8 @@ public class LVL {
 
         Map<String, String> objectNamesMap = new HashMap<>();
 
-        var path = new ArrayList<String>();
-        var obj = object;
+        List<String> path = new ArrayList<>();
+        MaxObject obj = object;
         while (obj != null) {
             path.add(obj.getName());
             obj = obj.parentObject;
@@ -652,9 +666,11 @@ public class LVL {
     }
 
     private static List<MaxObject> collectChilds(List<MaxObject> list, MaxObject parent) {
-        var ch = list.stream().filter(object -> parent.fullName.equals(object.parentName)).toList();
+        List<MaxObject> ch = list.stream()
+                .filter(object -> parent.fullName.equals(object.parentName))
+                .collect(Collectors.toList());
 
-        for (var c : ch) {
+        for (MaxObject c : ch) {
             c.parentObject = parent;
             c.childObjects.addAll(collectChilds(list, c));
         }
@@ -665,10 +681,10 @@ public class LVL {
     static short polygonCounter = -1;
 
     private static void countPolygons(Mesh mesh) {
-        for (var polygon : mesh.getPolygons()) {
+        for (LvlPolygon polygon : mesh.getPolygons()) {
             polygon.index = ++polygonCounter;
         }
-        for (var child : mesh.childObjects) {
+        for (MaxObject child : mesh.childObjects) {
             if (child instanceof Mesh) {
                 countPolygons((Mesh) child);
             }
@@ -682,7 +698,7 @@ public class LVL {
     private List<MaxObject> objects = new ArrayList<>();
 
     public List<Byte> toBytes() {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.addAll(toBytes(HEADER[0]));
         data.addAll(toBytes(HEADER[1]));
@@ -743,7 +759,7 @@ public class LVL {
     }
 
     private static List<Byte> toBytes(MaxObject object) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.addAll(toBytes(getObjectType(object)));
 
@@ -759,7 +775,7 @@ public class LVL {
 
         data.addAll(transformToBytes(object.getTransform()));
 
-        var position = object.getPosition();
+        double[] position = object.getPosition();
         data.addAll(toBytes(position[0]));
         data.addAll(toBytes(position[1]));
         data.addAll(toBytes(position[2]));
@@ -775,7 +791,7 @@ public class LVL {
 
         data.add((byte) (object instanceof FSM ? 1 : 0));
         if (object instanceof FSM) {
-            var fsmDataBytes = toBytes(((FSM) object).getFsmData());
+            List<Byte> fsmDataBytes = toBytes(((FSM) object).getFsmData());
             data.addAll(toBytes(fsmDataBytes.size()));
             data.addAll(fsmDataBytes);
         }
@@ -855,7 +871,7 @@ public class LVL {
                     data.addAll(toBytes(edge.getTo()));
                 }
 
-                var polygonTriangles = polygon.getTriangles();
+                List<LvlPolygon.Triangle> polygonTriangles = polygon.getTriangles();
                 data.addAll(toBytes(polygonTriangles.size()));
                 for (LvlPolygon.Triangle triangle : polygonTriangles) {
                     data.addAll(toBytes(triangle.normal));
@@ -869,7 +885,7 @@ public class LVL {
                 data.addAll(toBytes(polygon.unkVector1));
                 data.addAll(toBytes(new Vector3D(0, 0, 0)));
 
-                var unkVect = polygon.getUnknownVectors();
+                Vector3D[] unkVect = polygon.getUnknownVectors();
                 data.addAll(toBytes(unkVect[0]));
                 data.addAll(toBytes(unkVect[1]));
 
@@ -899,7 +915,7 @@ public class LVL {
                 data.add((byte) 24);
                 data.add((byte) 32);
 
-                var lightMapBytes = new byte[66 - 18];
+                byte[] lightMapBytes = new byte[66 - 18];
                 Arrays.fill(lightMapBytes, (byte) 127);
                 data.addAll(toBytes(lightMapBytes));
 
@@ -913,7 +929,7 @@ public class LVL {
 
             data.add((byte) (object instanceof Dynamic ? 1 : 0));
             if (object instanceof Dynamic) {
-                var dynamicDataBytes = toBytes(((Dynamic) object).getDynamicData());
+                List<Byte> dynamicDataBytes = toBytes(((Dynamic) object).getDynamicData());
 
                 data.addAll(toBytes(dynamicDataBytes.size()));
                 data.addAll(dynamicDataBytes);
@@ -1007,7 +1023,7 @@ public class LVL {
     }
 
     private static List<Byte> transformToBytes(double[][] transform) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.addAll(toBytes(transform[3][0]));
         data.addAll(toBytes(transform[3][1]));
@@ -1029,7 +1045,7 @@ public class LVL {
     }
 
     private static List<Byte> transformPolygonToBytes(double[][] transform) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.addAll(toBytes(transform[0][0]));
         data.addAll(toBytes(transform[0][1]));
@@ -1055,7 +1071,8 @@ public class LVL {
     }
 
     private static List<Byte> toBytes(byte[] value) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
+
         for (byte b : value) {
             data.add(b);
         }
@@ -1064,7 +1081,7 @@ public class LVL {
     }
 
     private static List<Byte> toBytes(double value) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         long lng = Double.doubleToLongBits(value);
         for (int i = 7; i >= 0; i--) {
@@ -1075,7 +1092,7 @@ public class LVL {
     }
 
     private static List<Byte> toBytes(float value) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         int _int = Float.floatToIntBits(value);
         for (int i = 3; i >= 0; i--) {
@@ -1086,7 +1103,8 @@ public class LVL {
     }
 
     private static List<Byte> toBytes(int value) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
+
         data.add((byte) value);
         data.add((byte) (value >> 8));
         data.add((byte) (value >> 16));
@@ -1096,7 +1114,8 @@ public class LVL {
     }
 
     private static List<Byte> toBytes(short value) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
+
         data.add((byte) value);
         data.add((byte) (value >> 8));
 
@@ -1104,7 +1123,8 @@ public class LVL {
     }
 
     private static List<Byte> toBytes(Vector3D point) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
+
         data.addAll(toBytes(point.getX()));
         data.addAll(toBytes(point.getY()));
         data.addAll(toBytes(point.getZ()));
@@ -1113,7 +1133,7 @@ public class LVL {
     }
 
     private static List<Byte> toBytes(FloatingFSM.FSMData fsmData) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.add((byte) 0x1D);
         data.addAll(toDynamicBytes((byte) fsmData.states.size()));
@@ -1164,7 +1184,7 @@ public class LVL {
     }
 
     private static List<Byte> toBytes(FloatingFSM.FSMData.Message msg) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.addAll(toDynamicBytes(msg.message));
         data.addAll(toDynamicBytes(msg.functionName));
@@ -1179,7 +1199,7 @@ public class LVL {
 
 
     private static List<Byte> toBytes(DynamicMesh.DynamicData dynamicData) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.addAll(toDynamicBytes((byte) dynamicData.keyframeTransforms.size()));
 
@@ -1225,10 +1245,10 @@ public class LVL {
             data.addAll(toDynamicBytes(animation.startKeyframe));
             data.addAll(toDynamicBytes(animation.endKeyframe));
 
-            var rMin = animation.rotation.points.stream().min(Float::compareTo).orElseThrow();
-            var rMax = animation.rotation.points.stream().max(Float::compareTo).orElseThrow();
-            var pMin = animation.position.points.stream().min(Float::compareTo).orElseThrow();
-            var pMax = animation.position.points.stream().max(Float::compareTo).orElseThrow();
+            Float rMin = animation.rotation.points.stream().min(Float::compareTo).orElseThrow(null);
+            Float rMax = animation.rotation.points.stream().max(Float::compareTo).orElseThrow(null);
+            Float pMin = animation.position.points.stream().min(Float::compareTo).orElseThrow(null);
+            Float pMax = animation.position.points.stream().max(Float::compareTo).orElseThrow(null);
 
             data.addAll(toDynamicAnimation("Position", animation.position, rMin, rMax, pMin, pMax, animation.unkByte1, animation.unkByte2));
             data.addAll(toDynamicAnimation("Rotation", animation.rotation, 0f, 1f, 0f, 1f, animation.unkByte3, animation.unkByte4));
@@ -1247,7 +1267,7 @@ public class LVL {
             byte unkByte1,
             byte unkByte2
     ) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         for (byte b : new byte[]{0x71, 0x03}) {
             data.addAll(toDynamicBytes(b));
@@ -1317,7 +1337,7 @@ public class LVL {
     }
 
     private static List<Byte> dynamicFloat4List(List<float[]> value) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.addAll(toBytes(new byte[]{0x11, (byte) value.size()}));
         for (int i = 0; i < value.size(); i++) {
@@ -1337,7 +1357,7 @@ public class LVL {
     }
 
     private static List<Byte> dynamicDouble(Double value) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.add((byte) 0x0A);
         data.addAll(toBytes(value));
@@ -1346,7 +1366,7 @@ public class LVL {
     }
 
     private static List<Byte> dynamicInteger(Integer value) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.add((byte) 0x01);
         data.addAll(toBytes(value));
@@ -1355,7 +1375,7 @@ public class LVL {
     }
 
     private static List<Byte> dynamicShort(Short value) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.add((byte) 0x13);
         data.addAll(toBytes(value));
@@ -1364,7 +1384,7 @@ public class LVL {
     }
 
     private static List<Byte> dynamicFloat(Float value) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.add((byte) 0x09);
         data.addAll(toBytes(value));
@@ -1373,7 +1393,7 @@ public class LVL {
     }
 
     private static List<Byte> dynamicTransform(float[][] value) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.add((byte) 0x1A);
         for (int i = 0; i < 4; i++) {
@@ -1386,7 +1406,7 @@ public class LVL {
     }
 
     private static List<Byte> dynamicString(String value) {
-        var data = new ArrayList<Byte>();
+        List<Byte> data = new ArrayList<>();
 
         data.addAll(toBytes(new byte[]{0x0D, 0x14, (byte) value.length()}));
         data.addAll(toBytes(value));

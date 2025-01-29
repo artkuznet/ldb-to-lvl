@@ -13,20 +13,20 @@ public class DynamicDataMapper {
     private static final String KEYFRAME = "Keyframe ";
 
     public static DynamicMesh.DynamicData toDynamicData(double[][] transform, List<Animation> animations) {
-        var dynamicData = new DynamicMesh.DynamicData();
+        DynamicMesh.DynamicData dynamicData = new DynamicMesh.DynamicData();
 
         AtomicInteger keyframeIndex = new AtomicInteger(-1);
 
-        var keyframeNames = new ArrayList<String>();
+        List<String> keyframeNames = new ArrayList<>();
         keyframeNames.add(KEYFRAME + (keyframeIndex.incrementAndGet()));
 
-        var keyframeTransforms = new ArrayList<double[][]>();
+        List<double[][]> keyframeTransforms = new ArrayList<>();
         keyframeTransforms.add(transform);
 
         animations.forEach(
                 animation -> {
-                    var t1 = animation.getStartTransformDouble();
-                    var t2 = animation.getEndTransformDouble();
+                    double[][] t1 = animation.getStartTransformDouble();
+                    double[][] t2 = animation.getEndTransformDouble();
 
                     if (indexOf(keyframeTransforms, t1) < 0) {
                         keyframeNames.add(KEYFRAME + (keyframeIndex.incrementAndGet()));
@@ -44,17 +44,17 @@ public class DynamicDataMapper {
         }
 
         dynamicData.animations = animations.stream().map(animation -> {
-            var dynamicAnimation = new DynamicMesh.DynamicData.DynamicAnimation();
+            DynamicMesh.DynamicData.DynamicAnimation dynamicAnimation = new DynamicMesh.DynamicData.DynamicAnimation();
 
             dynamicAnimation.name = animation.getAnimationName();
             dynamicAnimation.length = animation.getLengthInSecs();
 
-            var startKeyframeIndex = indexOf(keyframeTransforms, animation.getStartTransformDouble());
+            int startKeyframeIndex = indexOf(keyframeTransforms, animation.getStartTransformDouble());
             if (startKeyframeIndex < 0) {
                 throw new RuntimeException();
             }
             dynamicAnimation.startKeyframe = KEYFRAME + startKeyframeIndex;
-            var endKeyframeIndex = indexOf(keyframeTransforms, animation.getEndTransformDouble());
+            int endKeyframeIndex = indexOf(keyframeTransforms, animation.getEndTransformDouble());
             if (endKeyframeIndex < 0) {
                 throw new RuntimeException();
             }
@@ -70,8 +70,8 @@ public class DynamicDataMapper {
             dynamicAnimation.rotation.sampleRate = (short) animation.getRotationGraph().getSampleRate();
             dynamicAnimation.rotation.points = animation.getRotationGraph().getPoints();
 
-            dynamicAnimation.position.interpolation = getInterpolation(dynamicAnimation.position.points.toArray(Float[]::new));
-            dynamicAnimation.rotation.interpolation = getInterpolation(dynamicAnimation.rotation.points.toArray(Float[]::new));
+            dynamicAnimation.position.interpolation = getInterpolation(dynamicAnimation.position.points.toArray(new Float[0]));
+            dynamicAnimation.rotation.interpolation = getInterpolation(dynamicAnimation.rotation.points.toArray(new Float[0]));
 
             return dynamicAnimation;
 
@@ -81,21 +81,21 @@ public class DynamicDataMapper {
     }
 
     private static List<float[]> getInterpolation(Float[] points) {
-        var map = new LinkedHashMap<Integer, Float>();
+        LinkedHashMap<Integer, Float> map = new LinkedHashMap<>();
         map.put(0, points[0]);
         map.put(points.length - 1, points[points.length - 1]);
 
         while (true) {
-            var errors = getErrors(points, map);
+            List<Double> errors = getErrors(points, map);
 
-            var errorsSum = errors.stream().reduce(Double::sum).orElseThrow();
+            Double errorsSum = errors.stream().reduce(Double::sum).orElseThrow(null);
 
             if (errorsSum < 0.01) {
                 break;
             }
 
-            var maxError = errors.stream().max(Double::compareTo).orElseThrow();
-            var maxErrIndex = errors.indexOf(maxError);
+            Double maxError = errors.stream().max(Double::compareTo).orElseThrow(null);
+            int maxErrIndex = errors.indexOf(maxError);
 
             map.put(maxErrIndex, points[maxErrIndex]);
         }
@@ -107,17 +107,15 @@ public class DynamicDataMapper {
     }
 
     private static List<Double> getErrors(Float[] points, LinkedHashMap<Integer, Float> values) {
-        var arr = new Float[points.length];
+        Float[] arr = new Float[points.length];
         values.forEach((index, value) -> arr[index] = value);
 
-        var interpolated = interpolate(arr);
+        Float[] interpolated = interpolate(arr);
 
-        var errors = IntStream.range(0, interpolated.length)
+        return IntStream.range(0, interpolated.length)
                 .mapToDouble(i -> Math.pow(interpolated[i] - points[i], 2))
                 .boxed()
                 .collect(Collectors.toCollection(ArrayList::new));
-
-        return errors;
     }
 
     private static boolean transformEquals(double[][] t1, double[][] t2) {

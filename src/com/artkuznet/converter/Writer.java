@@ -2,6 +2,9 @@ package com.artkuznet.converter;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,6 +52,7 @@ public class Writer {
     }
 
     public void save() throws IOException {
+        Files.deleteIfExists(Paths.get(fileName));
         final FileOutputStream stream = new FileOutputStream(fileName);
         final byte[] bytes = new byte[data.size()];
         for (int i = 0; i < bytes.length; i++) {

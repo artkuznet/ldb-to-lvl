@@ -181,7 +181,7 @@ public class LvlPolygon {
     }
 
     public String getShortBitmapName() {
-        var substring = bitmapName;
+        String substring = bitmapName;
         if (substring.contains("\\")) {
             substring = substring.substring(substring.lastIndexOf("\\") + 1);
         }
@@ -230,24 +230,24 @@ public class LvlPolygon {
         }
 
         if (this.edges.length <= 4 || !(this instanceof LvlExit)) {
-            var t = new Triangle();
+            Triangle t = new Triangle();
             t.normal = normal.clone();
             t.vertices = new ArrayList<>();
 
-            for (var edge : edges) {
+            for (Edge edge : edges) {
                 t.vertices.add(edge.getTo());
             }
 
-            return List.of(t);
+            return Arrays.asList(t);
         }
 
-        var vertsCopy = new ArrayList<>(Arrays.stream(this.parentMesh.getVertices()).toList());
+        List<Vector3D> vertsCopy = new ArrayList<>(Arrays.stream(this.parentMesh.getVertices()).collect(Collectors.toList()));
 
-        var verts = Arrays.stream(this.edges)
+        List<Vector3D> verts = Arrays.stream(this.edges)
                 .map(edge -> vertsCopy.get(edge.getTo()))
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        var polygons = new double[verts.size() * 3];
+        double[] polygons = new double[verts.size() * 3];
 
         for (int i = 0, j = 0; j < verts.size(); i += 3, j++) {
             polygons[i] = verts.get(j).getX();
@@ -262,18 +262,18 @@ public class LvlPolygon {
         }
 
         if (earcut.isEmpty()) {
-            var t = new Triangle();
+            Triangle t = new Triangle();
             t.normal = normal.clone();
             t.vertices = new ArrayList<>();
 
-            for (var edge : edges) {
+            for (Edge edge : edges) {
                 t.vertices.add(edge.getTo());
             }
 
-            return List.of(t);
+            return Arrays.asList(t);
         }
 
-        var nCalc = Vector3D.calculateNormal(
+        Vector3D nCalc = Vector3D.calculateNormal(
                 verts.get(earcut.get(0)),
                 verts.get(earcut.get(1)),
                 verts.get(earcut.get(2))
@@ -283,10 +283,10 @@ public class LvlPolygon {
             Collections.reverse(earcut);
         }
 
-        var triangleList = new ArrayList<Triangle>();
+        List<Triangle> triangleList = new ArrayList<>();
 
         for (int i = 0; i < earcut.size(); i += 3) {
-            var triangle = new Triangle();
+            Triangle triangle = new Triangle();
             triangle.normal = normal.clone();
 
             triangle.vertices = new ArrayList<>();
@@ -302,9 +302,9 @@ public class LvlPolygon {
     }
 
     public Vector3D getDefaultUnk5() {
-        var max = Arrays.stream(new Double[]{normal.getX(), normal.getY(), normal.getZ()})
+        Double max = Arrays.stream(new Double[]{normal.getX(), normal.getY(), normal.getZ()})
                 .map(Math::abs)
-                .max(Double::compareTo).orElseThrow();
+                .max(Double::compareTo).orElseThrow(null);
 
         return new Vector3D(
                 (Math.abs(normal.getX()) >= max) ? (normal.getX() > 0 ? 1.0 : -1.0) : 0.0,
@@ -314,46 +314,48 @@ public class LvlPolygon {
     }
 
     public void calculateScaleUV() {
-        var pNormal = this.normal.clone();
+        Vector3D pNormal = this.normal.clone();
 
-        var triangleUV = Vector3D.findTriangle(this.UV);
+        List<Vector3D> triangleUV = Vector3D.findTriangle(this.UV);
 
-        var uvN = Vector3D.calculateNormal(triangleUV.get(0), triangleUV.get(1), triangleUV.get(2));
+        Vector3D uvN = Vector3D.calculateNormal(triangleUV.get(0), triangleUV.get(1), triangleUV.get(2));
 
-        var axisP = Vector3D.P(pNormal, uvN);
-        var angleP = pNormal.angle(uvN);
+        Vector3D axisP = Vector3D.P(pNormal, uvN);
+        double angleP = pNormal.angle(uvN);
 
-        var testVertsCenter = Vector3D.moveCenter(this.testVertices);
+        List<Vector3D> testVertsCenter = Vector3D.moveCenter(this.testVertices);
 
-        var testVertsUV = Vector3D.moveCenter(this.UV).stream().toList();
+        List<Vector3D> testVertsUV = Vector3D.moveCenter(this.UV).stream().collect(Collectors.toList());
 
-        var flatVertsXY = testVertsCenter.stream().map(v -> v.clone().rotateAxis(-angleP, axisP)).toList();
+        List<Vector3D> flatVertsXY = testVertsCenter.stream()
+                .map(v -> v.clone().rotateAxis(-angleP, axisP))
+                .collect(Collectors.toList());
 
-        var uvSizeX = Vector3D.sizeX(testVertsUV);
-        var uvSizeY = Vector3D.sizeY(testVertsUV);
+        double uvSizeX = Vector3D.sizeX(testVertsUV);
+        double uvSizeY = Vector3D.sizeY(testVertsUV);
 
-        var uvX = testVertsUV.stream().map(Vector3D::getX).toList();
-        var uvLx1 = uvX.get(2) - uvX.get(1);
-        var uvLx2 = uvX.get(1) - uvX.get(0);
-        var uvKx1 = uvLx1 / uvSizeX;
-        var uvKx2 = uvLx2 / uvSizeX;
+        List<Double> uvX = testVertsUV.stream().map(Vector3D::getX).collect(Collectors.toList());
+        double uvLx1 = uvX.get(2) - uvX.get(1);
+        double uvLx2 = uvX.get(1) - uvX.get(0);
+        double uvKx1 = uvLx1 / uvSizeX;
+        double uvKx2 = uvLx2 / uvSizeX;
 
-        var uvY = testVertsUV.stream().map(Vector3D::getY).toList();
-        var uvLy1 = uvY.get(2) - uvY.get(1);
-        var uvLy2 = uvY.get(1) - uvY.get(0);
-        var uvKy1 = uvLy1 / uvSizeY;
-        var uvKy2 = uvLy2 / uvSizeY;
+        List<Double> uvY = testVertsUV.stream().map(Vector3D::getY).collect(Collectors.toList());
+        double uvLy1 = uvY.get(2) - uvY.get(1);
+        double uvLy2 = uvY.get(1) - uvY.get(0);
+        double uvKy1 = uvLy1 / uvSizeY;
+        double uvKy2 = uvLy2 / uvSizeY;
 
         double from = -180;
         double to = 180;
 
         double calculatedAngle = 0;
         for (int i = 0; i < 10; i++) {
-            var step = (to - from) / 180.0;
-            var vals = findValues(from, to, step, flatVertsXY, uvKx1, uvKx2, uvKy1, uvKy2);
-            var min = findMinEntry(vals);
+            double step = (to - from) / 180.0;
+            Map<Double, Double> vals = findValues(from, to, step, flatVertsXY, uvKx1, uvKx2, uvKy1, uvKy2);
+            Map.Entry<Double, Double> min = findMinEntry(vals);
 
-            var d = ((to - from) / 2.0) / 4.0;
+            double d = ((to - from) / 2.0) / 4.0;
 
             from = min.getKey() - d;
             to = min.getKey() + d;
@@ -366,9 +368,9 @@ public class LvlPolygon {
         }
 
         double finalCalcAngle = calculatedAngle;
-        var newVertsXY = flatVertsXY.stream().map(v -> v.clone().rotateZ(finalCalcAngle)).toList();
+        List<Vector3D> newVertsXY = flatVertsXY.stream().map(v -> v.clone().rotateZ(finalCalcAngle)).collect(Collectors.toList());
 
-        var baseVector = uvN.clone().rotateY(90 * (uvN.clone().hardSmooth().equals(new Vector3D(0, 0, 1)) ? -1 : 1));
+        Vector3D baseVector = uvN.clone().rotateY(90 * (uvN.clone().hardSmooth().equals(new Vector3D(0, 0, 1)) ? -1 : 1));
 
         this.scaleU = baseVector.clone()
                 .multiply(Vector3D.sizeX(newVertsXY) / this.sizeUV[0])
@@ -401,38 +403,36 @@ public class LvlPolygon {
             double uvKy1,
             double uvKy2
     ) {
-
-        var values = new HashMap<Double, Double>();
+        Map<Double, Double> values = new HashMap<>();
 
         for (double angle = from; angle <= to; angle += step) {
-
             double finalAngle = angle;
-            var newVertsXY = flatVertsXY.stream().map(v -> v.clone().rotateZ(finalAngle)).toList();
+            List<Vector3D> newVertsXY = flatVertsXY.stream().map(v -> v.clone().rotateZ(finalAngle)).collect(Collectors.toList());
 
-            var newSizeX = Vector3D.sizeX(newVertsXY);
-            var newSizeY = Vector3D.sizeY(newVertsXY);
+            double newSizeX = Vector3D.sizeX(newVertsXY);
+            double newSizeY = Vector3D.sizeY(newVertsXY);
 
-            var newX = newVertsXY.stream().map(Vector3D::getX).toList();
-            var newLx1 = newX.get(2) - newX.get(1);
-            var newLx2 = newX.get(1) - newX.get(0);
-            var newKx1 = newLx1 / newSizeX;
-            var newKx2 = newLx2 / newSizeX;
+            List<Double> newX = newVertsXY.stream().map(Vector3D::getX).collect(Collectors.toList());
+            double newLx1 = newX.get(2) - newX.get(1);
+            double newLx2 = newX.get(1) - newX.get(0);
+            double newKx1 = newLx1 / newSizeX;
+            double newKx2 = newLx2 / newSizeX;
 
-            var newY = newVertsXY.stream().map(Vector3D::getY).toList();
-            var newLy1 = newY.get(2) - newY.get(1);
-            var newLy2 = newY.get(1) - newY.get(0);
-            var newKy1 = newLy1 / newSizeY;
-            var newKy2 = newLy2 / newSizeY;
+            List<Double> newY = newVertsXY.stream().map(Vector3D::getY).collect(Collectors.toList());
+            double newLy1 = newY.get(2) - newY.get(1);
+            double newLy2 = newY.get(1) - newY.get(0);
+            double newKy1 = newLy1 / newSizeY;
+            double newKy2 = newLy2 / newSizeY;
 
-            var e1 = Math.abs(newKx1 - uvKx1);
-            var e2 = Math.abs(newKx2 - uvKx2);
-            var e3 = Math.abs(newKy1 - uvKy1);
-            var e4 = Math.abs(newKy2 - uvKy2);
+            double e1 = Math.abs(newKx1 - uvKx1);
+            double e2 = Math.abs(newKx2 - uvKx2);
+            double e3 = Math.abs(newKy1 - uvKy1);
+            double e4 = Math.abs(newKy2 - uvKy2);
 
-            var eSumX = e1 * e1 + e2 * e2;
-            var eSumY = e3 * e3 + e4 * e4;
+            double eSumX = e1 * e1 + e2 * e2;
+            double eSumY = e3 * e3 + e4 * e4;
 
-            var eSum = Math.abs(eSumX - eSumY) + (eSumX + eSumY);
+            double eSum = Math.abs(eSumX - eSumY) + (eSumX + eSumY);
 
             values.put(angle, eSum);
         }
@@ -445,35 +445,35 @@ public class LvlPolygon {
             throw new RuntimeException("join failed");
         }
 
-        var joinedTriangles = new ArrayList<>(this.triangles);
-        joinedTriangles.addAll(polygons.stream().map(p -> p.triangles).flatMap(List::stream).toList());
+        List<Triangle> joinedTriangles = new ArrayList<>(this.triangles);
+        joinedTriangles.addAll(polygons.stream().map(p -> p.triangles).flatMap(List::stream).collect(Collectors.toList()));
         this.triangles = joinedTriangles;
 
-        var edges = this.triangles.stream()
+        List<Edge> edges = this.triangles.stream()
                 .map((Function<Triangle, List<Edge>>) triangle -> IntStream.range(0, triangle.vertices.size())
                         .mapToObj(i -> new Edge(
                                 triangle.vertices.get(i),
                                 triangle.vertices.get(i == triangle.vertices.size() - 1 ? 0 : i + 1))
                         )
                         .collect(Collectors.toCollection(ArrayList::new))
-                ).flatMap(List::stream).toList();
+                ).flatMap(List::stream).collect(Collectors.toList());
 
-        var facedEdges = new ArrayList<Edge>();
-        for (var edge : edges) {
-            if (edges.stream().filter(edge::equals).toList().size() == 1) {
+        List<Edge> facedEdges = new ArrayList<>();
+        for (Edge edge : edges) {
+            if (edges.stream().filter(edge::equals).count() == 1) {
                 facedEdges.add(edge);
             }
         }
 
-        var faces = new ArrayList<List<Edge>>();
+        List<List<Edge>> faces = new ArrayList<>();
         while (!facedEdges.isEmpty()) {
-            var face = new ArrayList<Edge>();
-            var edgeStart = facedEdges.remove(0);
+            List<Edge> face = new ArrayList<>();
+            Edge edgeStart = facedEdges.remove(0);
             face.add(edgeStart);
 
             while (true) {
                 Edge finalEdgeStart = edgeStart;
-                var edgeNext = facedEdges.stream()
+                Edge edgeNext = facedEdges.stream()
                         .filter(e -> finalEdgeStart.to == e.from)
                         .findFirst()
                         .orElse(null);
@@ -503,14 +503,14 @@ public class LvlPolygon {
         for (int i = 0; i < polygon1.edges.length; i++) {
             for (int j = 0; j < polygon2.edges.length; j++) {
                 if (polygon1.edges[i].equals(polygon2.edges[j])) {
-                    var e1uv1 = polygon1.UV.get(i).clone().softSmooth();
-                    var e1uv2 = polygon1.UV.get(i == polygon1.edges.length - 1 ? 0 : (1 + i)).clone().softSmooth();
+                    Vector3D e1uv1 = polygon1.UV.get(i).clone().softSmooth();
+                    Vector3D e1uv2 = polygon1.UV.get(i == polygon1.edges.length - 1 ? 0 : (1 + i)).clone().softSmooth();
 
-                    var e2uv1 = polygon2.UV.get(j).clone().softSmooth();
-                    var e2uv2 = polygon2.UV.get(j == polygon2.edges.length - 1 ? 0 : (1 + j)).clone().softSmooth();
+                    Vector3D e2uv1 = polygon2.UV.get(j).clone().softSmooth();
+                    Vector3D e2uv2 = polygon2.UV.get(j == polygon2.edges.length - 1 ? 0 : (1 + j)).clone().softSmooth();
 
-                    var n1 = Vector3D.calculateNormal(Vector3D.findTriangle(polygon1.UV)).softSmooth();
-                    var n2 = Vector3D.calculateNormal(Vector3D.findTriangle(polygon2.UV)).softSmooth();
+                    Vector3D n1 = Vector3D.calculateNormal(Vector3D.findTriangle(polygon1.UV)).softSmooth();
+                    Vector3D n2 = Vector3D.calculateNormal(Vector3D.findTriangle(polygon2.UV)).softSmooth();
 
                     if (n1.equals(n2)
                             && polygon1.normal.clone().softSmooth().equals(polygon2.normal.clone().softSmooth())

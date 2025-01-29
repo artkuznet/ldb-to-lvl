@@ -66,14 +66,14 @@ public class MaxLDBReader {
     private void parseBSP() {
         reader.readByte();
 
-        var verticesCount = (int) reader.readObject();
+        int verticesCount = (int) reader.readObject();
         for (int i = 0; i < verticesCount; i++) {
             ldb.getBsp().getVertices().add(new BSPVertex((Vertex) reader.readObject()));
         }
 
         reader.readByte();
 
-        var polygonsCount = (int) reader.readObject();
+        int polygonsCount = (int) reader.readObject();
         for (int i = 0; i < polygonsCount; i++) {
             ldb.getBsp().getPolygons().add(
                     new BSPPolygon(
@@ -88,7 +88,7 @@ public class MaxLDBReader {
 
         reader.readByte();
 
-        var nodesCount = (int) reader.readObject();
+        int nodesCount = (int) reader.readObject();
         for (int i = 0; i < nodesCount; i++) {
             ldb.getBsp().getNodes().add(
                     new BSPNode(
@@ -105,7 +105,7 @@ public class MaxLDBReader {
 
         reader.readByte();
 
-        var indicesCount = (int) reader.readObject();
+        int indicesCount = (int) reader.readObject();
         for (int i = 0; i < indicesCount; i++) {
             ldb.getBsp().getIndices().add(new BSPPolygonIndex((int) reader.readObject()));
         }
@@ -114,7 +114,7 @@ public class MaxLDBReader {
     private void parseMaterials() {
         reader.readObject();
 
-        var texturesCount = (int) reader.readObject();
+        int texturesCount = (int) reader.readObject();
         for (int i = 0; i < texturesCount; i++) {
             ldb.getTextures().add(
                     new Texture(
@@ -126,9 +126,9 @@ public class MaxLDBReader {
 
         reader.readByte();
 
-        var tmpMaterialContainer = new MaterialContainer();
+        MaterialContainer tmpMaterialContainer = new MaterialContainer();
 
-        var materialsCount = (int) reader.readObject();
+        int materialsCount = (int) reader.readObject();
         for (int i = 0; i < materialsCount; i++) {
             int material_id = (int) reader.readObject();
             reader.readByte();
@@ -137,7 +137,7 @@ public class MaxLDBReader {
 
         reader.readByte();
 
-        var orderCount = (int) reader.readObject();
+        int orderCount = (int) reader.readObject();
         for (int i = 0; i < orderCount; i++) {
             reader.readByte();
             String categoryName = (String) reader.readObject();
@@ -146,10 +146,10 @@ public class MaxLDBReader {
         }
 
 
-        var categoriesCount = (int) reader.readObject();
+        int categoriesCount = (int) reader.readObject();
         for (int i = 0; i < categoriesCount; i++) {
             String category_name = (String) reader.readObject();
-            var categoryMaterialsCount = (int) reader.readObject();
+            int categoryMaterialsCount = (int) reader.readObject();
 
             for (int j = 0; j < categoryMaterialsCount; j++) {
                 Material material = ldb.getMaterials().findMaterialByCategoryAndName(category_name, (String) reader.readObject());
@@ -169,7 +169,7 @@ public class MaxLDBReader {
             }
         }
 
-        var lightmapsCount = (int) reader.readObject();
+        int lightmapsCount = (int) reader.readObject();
         for (int i = 0; i < lightmapsCount; i++) {
             ldb.getLightMaps().add(
                     new LightmapTexture(
@@ -181,11 +181,11 @@ public class MaxLDBReader {
     }
 
     private void parseExits() {
-        var exitsCount = (int) reader.readObject();
+        int exitsCount = (int) reader.readObject();
         for (int i = 0; i < exitsCount; i++) {
             String exit_name = (String) reader.readObject();
             VertexContainer vertices = new VertexContainer();
-            var verticesCount = (int) reader.readObject();
+            int verticesCount = (int) reader.readObject();
             for (int j = 0; j < verticesCount; j++) {
                 vertices.add((Vertex) reader.readObject());
             }
@@ -215,7 +215,7 @@ public class MaxLDBReader {
     private void parseStaticMeshes() {
         reader.readByte();
 
-        var textureVerticesCount = (int) reader.readObject();
+        int textureVerticesCount = (int) reader.readObject();
         for (int i = 0; i < textureVerticesCount; i++) {
             ldb.getStaticMeshes().getTextureVertices().add(
                     new TextureVertex(
@@ -227,13 +227,13 @@ public class MaxLDBReader {
                     ));
         }
 
-        var staticMeshesCount = (int) reader.readObject();
+        int staticMeshesCount = (int) reader.readObject();
         for (int i = 0; i < staticMeshesCount; i++) {
             int static_mesh_id = (int) reader.readObject();
 
             VertexContainer vertices = new VertexContainer();
 
-            var verticesCount = (int) reader.readObject();
+            int verticesCount = (int) reader.readObject();
             for (int j = 0; j < verticesCount; j++) {
                 vertices.add((Vertex) reader.readObject());
             }
@@ -242,7 +242,7 @@ public class MaxLDBReader {
 
             VertexContainer normals = new VertexContainer();
 
-            var normalsCount = (int) reader.readObject();
+            int normalsCount = (int) reader.readObject();
             for (int j = 0; j < normalsCount; j++) {
                 normals.add((Vertex) reader.readObject());
             }
@@ -251,7 +251,7 @@ public class MaxLDBReader {
 
             PolygonContainer polygons = new PolygonContainer();
 
-            var polygonsCount = (int) reader.readObject();
+            int polygonsCount = (int) reader.readObject();
             for (int j = 0; j < polygonsCount; j++) {
                 polygons.add(new Polygon(
                         (int) reader.readObject(),
@@ -269,7 +269,7 @@ public class MaxLDBReader {
 
             reader.readByte();
 
-            var cnt1 = (int) reader.readObject();
+            int cnt1 = (int) reader.readObject();
             for (int j = 0; j < cnt1; j++) {
                 reader.readObject();
                 reader.readObject();
@@ -286,7 +286,7 @@ public class MaxLDBReader {
     }
 
     private void parseDynamicLights() {
-        var dynamicLightsCount = (int) reader.readObject();
+        int dynamicLightsCount = (int) reader.readObject();
         for (int i = 0; i < dynamicLightsCount; i++) {
             ldb.getDynamicLights().add(new DynamicLight(
                     (String) reader.readObject(),
@@ -313,7 +313,7 @@ public class MaxLDBReader {
     }
 
     private void parseWaypoints() {
-        var waypointsCount = (int) reader.readObject();
+        int waypointsCount = (int) reader.readObject();
         for (int i = 0; i < waypointsCount; i++) {
             ldb.getWaypoints().add(new Waypoint(
                             (String) reader.readObject(),
@@ -331,7 +331,7 @@ public class MaxLDBReader {
     }
 
     private void parseFSMs() {
-        var fsmsCount = (int) reader.readObject();
+        int fsmsCount = (int) reader.readObject();
         for (int i = 0; i < fsmsCount; i++) {
             String shared_name = (String) reader.readObject();
 
@@ -347,7 +347,7 @@ public class MaxLDBReader {
 
             FSMStateContainer states = new FSMStateContainer();
 
-            var fsmStatesCount = (int) reader.readObject();
+            int fsmStatesCount = (int) reader.readObject();
             for (int j = 0; j < fsmStatesCount; j++) {
                 states.add((String) reader.readObject());
             }
@@ -358,13 +358,13 @@ public class MaxLDBReader {
 
             FSMMessageContainer startup_before = new FSMMessageContainer();
 
-            var fsmMessagesBeforeCount = (int) reader.readObject();
+            int fsmMessagesBeforeCount = (int) reader.readObject();
             for (int j = 0; j < fsmMessagesBeforeCount; j++) {
                 startup_before.add((String) reader.readObject());
             }
 
             reader.readByte();
-            var unkCount = (int) reader.readObject();
+            int unkCount = (int) reader.readObject();
             for (int j = 0; j < unkCount; j++) {
                 reader.readObject();
             }
@@ -373,7 +373,7 @@ public class MaxLDBReader {
 
             FSMMessageContainer startup_after = new FSMMessageContainer();
 
-            var fsmMessagesAfterCount = (int) reader.readObject();
+            int fsmMessagesAfterCount = (int) reader.readObject();
             for (int j = 0; j < fsmMessagesAfterCount; j++) {
                 startup_after.add((String) reader.readObject());
             }
@@ -381,20 +381,20 @@ public class MaxLDBReader {
             reader.readByte();
 
             FSMEventContainer state_switch = new FSMEventContainer();
-            var fsmStateSwitchesCount = (int) reader.readObject();
+            int fsmStateSwitchesCount = (int) reader.readObject();
             for (int j = 0; j < fsmStateSwitchesCount; j++) {
                 String state_name = (String) reader.readObject();
 
                 reader.readByte();
                 FSMMessageContainer before = new FSMMessageContainer();
-                var fsmStateSwitchBeforeCount = (int) reader.readObject();
+                int fsmStateSwitchBeforeCount = (int) reader.readObject();
                 for (int k = 0; k < fsmStateSwitchBeforeCount; k++) {
                     before.add((String) reader.readObject());
                 }
 
                 reader.readByte();
                 FSMStateSpecificMessageContainer state_specific = new FSMStateSpecificMessageContainer();
-                var fsmStateSpecificCount = (int) reader.readObject();
+                int fsmStateSpecificCount = (int) reader.readObject();
                 for (int k = 0; k < fsmStateSpecificCount; k++) {
                     String state_name_specific = (String) reader.readObject();
 
@@ -402,7 +402,7 @@ public class MaxLDBReader {
 
                     FSMMessageContainer messages = new FSMMessageContainer();
 
-                    var fsmStateSpecificMessagesCount = (int) reader.readObject();
+                    int fsmStateSpecificMessagesCount = (int) reader.readObject();
                     for (int l = 0; l < fsmStateSpecificMessagesCount; l++) {
                         messages.add((String) reader.readObject());
                     }
@@ -412,7 +412,7 @@ public class MaxLDBReader {
 
                 reader.readByte();
                 FSMMessageContainer after = new FSMMessageContainer();
-                var fsmSpecificMessagesAfterCount = (int) reader.readObject();
+                int fsmSpecificMessagesAfterCount = (int) reader.readObject();
                 for (int k = 0; k < fsmSpecificMessagesAfterCount; k++) {
                     after.add((String) reader.readObject());
                 }
@@ -423,14 +423,14 @@ public class MaxLDBReader {
             FSMEventContainer custom_string = new FSMEventContainer();
 
 
-            var fsmCustomStringMessagesCount = (int) reader.readObject();
+            int fsmCustomStringMessagesCount = (int) reader.readObject();
             for (int j = 0; j < fsmCustomStringMessagesCount; j++) {
 
                 String state_name = (String) reader.readObject();
 
                 reader.readByte();
                 FSMMessageContainer before = new FSMMessageContainer();
-                var cnt1 = (int) reader.readObject();
+                int cnt1 = (int) reader.readObject();
                 for (int k = 0; k < cnt1; k++) {
                     before.add((String) reader.readObject());
                 }
@@ -439,12 +439,12 @@ public class MaxLDBReader {
 
                 FSMStateSpecificMessageContainer state_specific = new FSMStateSpecificMessageContainer();
 
-                var cnt2 = (int) reader.readObject();
+                int cnt2 = (int) reader.readObject();
                 for (int k = 0; k < cnt2; k++) {
                     String state_name_1 = (String) reader.readObject();
                     reader.readByte();
                     FSMMessageContainer messages = new FSMMessageContainer();
-                    var cnt3 = (int) reader.readObject();
+                    int cnt3 = (int) reader.readObject();
                     for (int l = 0; l < cnt3; l++) {
                         messages.add((String) reader.readObject());
                     }
@@ -453,7 +453,7 @@ public class MaxLDBReader {
 
                 reader.readByte();
                 FSMMessageContainer after = new FSMMessageContainer();
-                var cnt4 = (int) reader.readObject();
+                int cnt4 = (int) reader.readObject();
                 for (int k = 0; k < cnt4; k++) {
                     after.add((String) reader.readObject());
                 }
@@ -463,13 +463,13 @@ public class MaxLDBReader {
             reader.readByte();
             FSMEventContainer entity_specific = new FSMEventContainer();
 
-            var entitySpecificMessagesCount = (int) reader.readObject();
+            int entitySpecificMessagesCount = (int) reader.readObject();
             for (int j = 0; j < entitySpecificMessagesCount; j++) {
                 String state_name = (String) reader.readObject();
 
                 reader.readByte();
                 FSMMessageContainer before = new FSMMessageContainer();
-                var cnt1 = (int) reader.readObject();
+                int cnt1 = (int) reader.readObject();
                 for (int k = 0; k < cnt1; k++) {
                     before.add((String) reader.readObject());
                 }
@@ -477,12 +477,12 @@ public class MaxLDBReader {
                 reader.readByte();
                 FSMStateSpecificMessageContainer state_specific = new FSMStateSpecificMessageContainer();
 
-                var cnt2 = (int) reader.readObject();
+                int cnt2 = (int) reader.readObject();
                 for (int k = 0; k < cnt2; k++) {
                     String state_name_1 = (String) reader.readObject();
                     reader.readByte();
                     FSMMessageContainer messages = new FSMMessageContainer();
-                    var cnt3 = (int) reader.readObject();
+                    int cnt3 = (int) reader.readObject();
                     for (int l = 0; l < cnt3; l++) {
                         messages.add((String) reader.readObject());
                     }
@@ -491,7 +491,7 @@ public class MaxLDBReader {
 
                 reader.readByte();
                 FSMMessageContainer after = new FSMMessageContainer();
-                var cnt5 = (int) reader.readObject();
+                int cnt5 = (int) reader.readObject();
 
                 for (int k = 0; k < cnt5; k++) {
                     after.add((String) reader.readObject());
@@ -515,7 +515,7 @@ public class MaxLDBReader {
     }
 
     private void parseCharacters() {
-        var charactersCount = (int) reader.readObject();
+        int charactersCount = (int) reader.readObject();
         for (int i = 0; i < charactersCount; i++) {
             String shared_name = (String) reader.readObject();
 
@@ -532,7 +532,7 @@ public class MaxLDBReader {
             reader.readByte();
 
             FSMMessageContainer startup_before = new FSMMessageContainer();
-            var cnt1 = (int) reader.readObject();
+            int cnt1 = (int) reader.readObject();
             for (int j = 0; j < cnt1; j++) {
                 startup_before.add((String) reader.readObject());
             }
@@ -540,7 +540,7 @@ public class MaxLDBReader {
             reader.readByte();
 
             FSMMessageContainer on_death_before = new FSMMessageContainer();
-            var cnt2 = (int) reader.readObject();
+            int cnt2 = (int) reader.readObject();
             for (int j = 0; j < cnt2; j++) {
                 on_death_before.add((String) reader.readObject());
             }
@@ -548,7 +548,7 @@ public class MaxLDBReader {
             reader.readByte();
 
             FSMMessageContainer on_activate_before = new FSMMessageContainer();
-            var cnt3 = (int) reader.readObject();
+            int cnt3 = (int) reader.readObject();
             for (int j = 0; j < cnt3; j++) {
                 on_activate_before.add((String) reader.readObject());
             }
@@ -557,7 +557,7 @@ public class MaxLDBReader {
 
             FSMMessageContainer on_special_before = new FSMMessageContainer();
 
-            var cnt4 = (int) reader.readObject();
+            int cnt4 = (int) reader.readObject();
             for (int j = 0; j < cnt4; j++) {
                 on_special_before.add((String) reader.readObject());
             }
@@ -577,7 +577,7 @@ public class MaxLDBReader {
     }
 
     private void parseTriggers() {
-        var triggersCount = (int) reader.readObject();
+        int triggersCount = (int) reader.readObject();
         for (int i = 0; i < triggersCount; i++) {
             String shared_name = (String) reader.readObject();
             EntityProperties properties = new EntityProperties(
@@ -599,7 +599,7 @@ public class MaxLDBReader {
     private void parseDynamicMeshes() {
         reader.readByte();
 
-        var cnt1 = (int) reader.readObject();
+        int cnt1 = (int) reader.readObject();
         for (int i = 0; i < cnt1; i++) {
             ldb.getDynamicMeshes().getTextureVertices().add(
                     new TextureVertex(
@@ -611,12 +611,12 @@ public class MaxLDBReader {
                     ));
         }
 
-        var cnt2 = (int) reader.readObject();
+        int cnt2 = (int) reader.readObject();
         for (int i = 0; i < cnt2; i++) {
             String shared_name = (String) reader.readObject();
 
             VertexContainer vertices = new VertexContainer();
-            var cnt3 = (int) reader.readObject();
+            int cnt3 = (int) reader.readObject();
             for (int j = 0; j < cnt3; j++) {
                 vertices.add((Vertex) reader.readObject());
             }
@@ -624,7 +624,7 @@ public class MaxLDBReader {
             reader.readByte();
 
             VertexContainer normals = new VertexContainer();
-            var cnt4 = (int) reader.readObject();
+            int cnt4 = (int) reader.readObject();
             for (int j = 0; j < cnt4; j++) {
                 normals.add((Vertex) reader.readObject());
             }
@@ -632,7 +632,7 @@ public class MaxLDBReader {
             float[][] transform = (float[][]) reader.readObject();
 
             PolygonContainer polygons = new PolygonContainer();
-            var cnt5 = (int) reader.readObject();
+            int cnt5 = (int) reader.readObject();
             for (int j = 0; j < cnt5; j++) {
                 polygons.add(new Polygon(
                         (int) reader.readObject(),
@@ -650,7 +650,7 @@ public class MaxLDBReader {
 
             reader.readByte();
 
-            var unk1 = reader.readObject();
+            Object unk1 = reader.readObject();
             EntityProperties properties = new EntityProperties(
                     (String) reader.readObject(),
                     (float[][]) reader.readObject(),
@@ -660,7 +660,7 @@ public class MaxLDBReader {
             );
 
             AnimationContainer animations = new AnimationContainer();
-            var cnt6 = (int) reader.readObject();
+            int cnt6 = (int) reader.readObject();
             for (int j = 0; j < cnt6; j++) {
                 String animation_name = (String) reader.readObject();
                 float length_in_secs = (float) reader.readObject();
@@ -671,7 +671,7 @@ public class MaxLDBReader {
 
                 FSMMessageContainer leaving_first_frame = new FSMMessageContainer();
 
-                var cnt7 = (int) reader.readObject();
+                int cnt7 = (int) reader.readObject();
                 for (int k = 0; k < cnt7; k++) {
                     leaving_first_frame.add((String) reader.readObject());
                 }
@@ -679,7 +679,7 @@ public class MaxLDBReader {
                 reader.readByte();
 
                 FSMMessageContainer returning_first_frame = new FSMMessageContainer();
-                var cnt8 = (int) reader.readObject();
+                int cnt8 = (int) reader.readObject();
                 for (int k = 0; k < cnt8; k++) {
                     returning_first_frame.add((String) reader.readObject());
                 }
@@ -687,7 +687,7 @@ public class MaxLDBReader {
                 reader.readByte();
 
                 FSMMessageContainer reaching_second_frame = new FSMMessageContainer();
-                var cnt9 = (int) reader.readObject();
+                int cnt9 = (int) reader.readObject();
                 for (int k = 0; k < cnt9; k++) {
                     reaching_second_frame.add((String) reader.readObject());
                 }
@@ -796,7 +796,7 @@ public class MaxLDBReader {
     }
 
     private void parseRooms() {
-        var cnt1 = (int) reader.readObject();
+        int cnt1 = (int) reader.readObject();
         for (int i = 0; i < cnt1; i++) {
             int id = (int) reader.readObject();
 
@@ -883,7 +883,8 @@ public class MaxLDBReader {
             }
 
             String room_name = (String) reader.readObject();
-            var ai_net_density = reader.readObject();
+
+            Object aiNetDensity = reader.readObject();
 
             ldb.getRooms().add(new Room(
                     id,
