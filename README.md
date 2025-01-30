@@ -9,7 +9,7 @@ Java 8 or more recent is required
 java -jar ldb-to-lvl.jar BasicRoom.ldb
 ```
 
-Please wait until all meshes have been calculated, this may take a few minutes.
+Please wait until all the meshes are calculated, it may take a few minutes.
 
 ### Try using options to prevent some errors:
 * `--skip-join-polygons` - do not join coplanar polygons
