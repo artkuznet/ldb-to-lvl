@@ -6,6 +6,8 @@ import java.util.List;
 
 public class Material {
 
+  //  private int typeId = MaterialType.DEFAULT.ordinal();
+
     private String categoryName = MaterialType.DEFAULT.toString().toLowerCase();
 
     private String name = "";
