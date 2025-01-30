@@ -136,8 +136,6 @@ public class MeshBuilder {
 
         } while (!allCollected);
 
-        System.out.println("polygon groups: " + groups.size());
-
         return groups;
     }
 

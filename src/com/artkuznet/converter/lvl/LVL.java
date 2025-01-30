@@ -8,7 +8,6 @@ import com.artkuznet.converter.ldb.fsm.LdbFSM;
 import com.artkuznet.converter.ldb.material.Material;
 import com.artkuznet.converter.ldb.polygon.Geometry;
 import com.artkuznet.converter.ldb.polygon.Polygon;
-import com.artkuznet.converter.ldb.room.Room;
 import com.artkuznet.converter.ldb.staticmesh.StaticMesh;
 import com.artkuznet.converter.ldb.vertex.Vertex;
 import com.artkuznet.converter.ldb.vertex.VertexUV;
@@ -17,7 +16,6 @@ import com.artkuznet.converter.mapper.FsmDataMapper;
 import com.artkuznet.converter.maxed.*;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -281,119 +279,116 @@ public class LVL {
 
             List<DynamicMesh> dynamicMeshes = ldb.getDynamicMeshes().getList().stream()
                     .filter(d -> d.getRoomName().equals(room.getName()))
-                    .map(new Function<LdbDynamicMesh, DynamicMesh>() {
-                        @Override
-                        public DynamicMesh apply(LdbDynamicMesh ldbDynamicMesh) {
-                            DynamicMesh dynamic = new DynamicMesh();
+                    .map(ldbDynamicMesh -> {
+                        DynamicMesh dynamic = new DynamicMesh();
 
-                            int dynamicPolygonsCount = ldbDynamicMesh.getPolygons().getList().size();
+                        int dynamicPolygonsCount = ldbDynamicMesh.getPolygons().getList().size();
 
-                            List<Geometry> geometries = IntStream.range(0, dynamicPolygonsCount)
-                                    .mapToObj(ldbDynamicMesh::constructPolygon)
-                                    .collect(Collectors.toCollection(ArrayList::new));
+                        List<Geometry> geometries1 = IntStream.range(0, dynamicPolygonsCount)
+                                .mapToObj(ldbDynamicMesh::constructPolygon)
+                                .collect(Collectors.toCollection(ArrayList::new));
 
-                            List<Vector3D> lvlVertexList = new ArrayList<>();
-                            geometries.forEach(geometry -> geometry.getVertices().forEach(vertex -> {
-                                Vector3D point3d = new Vector3D(vertex.getX(), vertex.getY(), vertex.getZ());
-                                if (!lvlVertexList.contains(point3d)) {
-                                    lvlVertexList.add(point3d);
-                                }
-                            }));
+                        List<Vector3D> lvlVertexList1 = new ArrayList<>();
+                        geometries1.forEach(geometry -> geometry.getVertices().forEach(vertex -> {
+                            Vector3D point3d = new Vector3D(vertex.getX(), vertex.getY(), vertex.getZ());
+                            if (!lvlVertexList1.contains(point3d)) {
+                                lvlVertexList1.add(point3d);
+                            }
+                        }));
 
-                            List<LvlPolygon> dynamicPolygons = new ArrayList<>();
+                        List<LvlPolygon> dynamicPolygons = new ArrayList<>();
 
-                            geometries.forEach(geometry -> {
-                                List<Vertex> vertices = geometry.getVertices();
-                                VertexUV sizeUV = geometry.getUvSize();
+                        geometries1.forEach(geometry -> {
+                            List<Vertex> vertices = geometry.getVertices();
+                            VertexUV sizeUV = geometry.getUvSize();
 
-                                Polygon geometryPolygon = ldbDynamicMesh.getPolygons().getById(geometry.getPolygonId());
-                                Vertex normal = geometryPolygon.getNormal();
+                            Polygon geometryPolygon = ldbDynamicMesh.getPolygons().getById(geometry.getPolygonId());
+                            Vertex normal = geometryPolygon.getNormal();
 
-                                LvlPolygon.Edge[] edges = new LvlPolygon.Edge[vertices.size()];
-                                for (int i = 0; i < edges.length - 1; i++) {
-                                    Vertex vFrom = vertices.get(i);
-                                    Vector3D p3dFrom = new Vector3D(vFrom.getX(), vFrom.getY(), vFrom.getZ());
-                                    int vertexIndexFrom = lvlVertexList.indexOf(p3dFrom);
+                            LvlPolygon.Edge[] edges = new LvlPolygon.Edge[vertices.size()];
+                            for (int i = 0; i < edges.length - 1; i++) {
+                                Vertex vFrom = vertices.get(i);
+                                Vector3D p3dFrom = new Vector3D(vFrom.getX(), vFrom.getY(), vFrom.getZ());
+                                int vertexIndexFrom = lvlVertexList1.indexOf(p3dFrom);
 
-                                    Vertex vTo = vertices.get(i + 1);
-                                    Vector3D p3dTo = new Vector3D(vTo.getX(), vTo.getY(), vTo.getZ());
-                                    int vertexIndexTo = lvlVertexList.indexOf(p3dTo);
+                                Vertex vTo = vertices.get(i + 1);
+                                Vector3D p3dTo = new Vector3D(vTo.getX(), vTo.getY(), vTo.getZ());
+                                int vertexIndexTo = lvlVertexList1.indexOf(p3dTo);
 
-                                    edges[i] = new LvlPolygon.Edge(vertexIndexFrom, vertexIndexTo);
-                                }
+                                edges[i] = new LvlPolygon.Edge(vertexIndexFrom, vertexIndexTo);
+                            }
 
-                                edges[edges.length - 1] = new LvlPolygon.Edge(edges[edges.length - 2].getTo(), edges[0].getFrom());
+                            edges[edges.length - 1] = new LvlPolygon.Edge(edges[edges.length - 2].getTo(), edges[0].getFrom());
 
-                                LvlPolygon poly = new LvlPolygon(
-                                        edges,
-                                        geometry.getMaterial().getCategoryName(),
-                                        geometry.getMaterial().getMaterialName(),
-                                        new Vector3D(normal.getX(), normal.getY(), normal.getZ())
-                                );
+                            LvlPolygon poly = new LvlPolygon(
+                                    edges,
+                                    geometry.getMaterial().getCategoryName(),
+                                    geometry.getMaterial().getMaterialName(),
+                                    new Vector3D(normal.getX(), normal.getY(), normal.getZ())
+                            );
 
-                                poly.textureOffset = geometry.getTextureOffset();
-                                poly.unkVertex1 = geometry.getFirstVertex();
-                                poly.unkVertex2 = geometry.getFirstVertex();
-                                poly.unkVector1 = poly.getDefaultUnk5();
+                            poly.textureOffset = geometry.getTextureOffset();
+                            poly.unkVertex1 = geometry.getFirstVertex();
+                            poly.unkVertex2 = geometry.getFirstVertex();
+                            poly.unkVector1 = poly.getDefaultUnk5();
 
-                                poly.sizeUV = new double[]{sizeUV.getU(), sizeUV.getV()};
-                                poly.UV = geometry.getUv().stream().map(Vector3D::new).collect(Collectors.toList());
+                            poly.sizeUV = new double[]{sizeUV.getU(), sizeUV.getV()};
+                            poly.UV = geometry.getUv().stream().map(Vector3D::new).collect(Collectors.toList());
 
-                                poly.unkTransform = poly.getDefaultTransform();
-                                poly.pointPolygonIndex = -1;
+                            poly.unkTransform = poly.getDefaultTransform();
+                            poly.pointPolygonIndex = -1;
 
-                                poly.testVertices = vertices.stream()
-                                        .map(v -> new Vector3D(v.getX(), v.getY(), v.getZ()))
-                                        .collect(Collectors.toList());
+                            poly.testVertices = vertices.stream()
+                                    .map(v -> new Vector3D(v.getX(), v.getY(), v.getZ()))
+                                    .collect(Collectors.toList());
 
-                                poly.index = ++polygonsCounter[0];
+                            poly.index = ++polygonsCounter[0];
 
-                                poly.calculateScaleUV();
+                            poly.calculateScaleUV();
 
-                                poly.geometryPolyGroup = geometryPolygon.getSmoothingGroup();
-                                poly.maxEdgeLength = geometryPolygon.getMaxEdgeLength();
-                                poly.maxAngle = geometryPolygon.getMaxAngle();
+                            poly.geometryPolyGroup = geometryPolygon.getSmoothingGroup();
+                            poly.maxEdgeLength = geometryPolygon.getMaxEdgeLength();
+                            poly.maxAngle = geometryPolygon.getMaxAngle();
 
-                                dynamicPolygons.add(poly);
-                            });
+                            dynamicPolygons.add(poly);
+                        });
 
-                            dynamic.pointlightAffected = ldbDynamicMesh.getConfig().getPointlightAffected() == 1;
-                            dynamic.blockExplosions = ldbDynamicMesh.getConfig().getBlockExplosions() == 1;
-                            dynamic.bulletCollisions = ldbDynamicMesh.getConfig().getBulletCollisions() == 1;
-                            dynamic.dynamicCollisions = ldbDynamicMesh.getConfig().getDynamicCollisions() == 1;
-                            dynamic.lightMapped = ldbDynamicMesh.getConfig().getLightMapped() == 1;
-                            dynamic.contUpdate = ldbDynamicMesh.getConfig().getContUpdate() == 1;
+                        dynamic.pointlightAffected = ldbDynamicMesh.getConfig().getPointlightAffected() == 1;
+                        dynamic.blockExplosions = ldbDynamicMesh.getConfig().getBlockExplosions() == 1;
+                        dynamic.bulletCollisions = ldbDynamicMesh.getConfig().getBulletCollisions() == 1;
+                        dynamic.dynamicCollisions = ldbDynamicMesh.getConfig().getDynamicCollisions() == 1;
+                        dynamic.lightMapped = ldbDynamicMesh.getConfig().getLightMapped() == 1;
+                        dynamic.contUpdate = ldbDynamicMesh.getConfig().getContUpdate() == 1;
 
-                            dynamic.flags = new byte[]{
-                                    1,
-                                    1,
-                                    (byte) (dynamic.dynamicCollisions ? 1 : 0),
-                                    1,
-                                    (byte) (dynamic.pointlightAffected ? 1 : 0),
-                                    (byte) (dynamic.contUpdate ? 1 : 0),
-                                    0
-                            };
+                        dynamic.flags = new byte[]{
+                                1,
+                                1,
+                                (byte) (dynamic.dynamicCollisions ? 1 : 0),
+                                1,
+                                (byte) (dynamic.pointlightAffected ? 1 : 0),
+                                (byte) (dynamic.contUpdate ? 1 : 0),
+                                0
+                        };
 
-                            dynamic.setName(ldbDynamicMesh.getShortName());
+                        dynamic.setName(ldbDynamicMesh.getShortName());
 
-                            dynamic.setFlipFaces(false);
+                        dynamic.setFlipFaces(false);
 
-                            dynamic.setVertices(lvlVertexList.toArray(new Vector3D[0]));
-                            dynamic.setPolygons(dynamicPolygons.toArray(new LvlPolygon[0]));
-                            dynamic.setTransform(ldbDynamicMesh.getTransformDouble());
+                        dynamic.setVertices(lvlVertexList1.toArray(new Vector3D[0]));
+                        dynamic.setPolygons(dynamicPolygons.toArray(new LvlPolygon[0]));
+                        dynamic.setTransform(ldbDynamicMesh.getTransformDouble());
 
-                            dynamic.parentName = ldbDynamicMesh.getProperties().getParentDynamicMeshName();
-                            dynamic.fullName = ldbDynamicMesh.getSharedName();
+                        dynamic.parentName = ldbDynamicMesh.getProperties().getParentDynamicMeshName();
+                        dynamic.fullName = ldbDynamicMesh.getSharedName();
 
-                            dynamic.setTransform(ldbDynamicMesh.getProperties().getObjectToParentTransformDouble());
+                        dynamic.setTransform(ldbDynamicMesh.getProperties().getObjectToParentTransformDouble());
 
-                            dynamic.setDynamicData(DynamicDataMapper.toDynamicData(
-                                    dynamic.getTransform(),
-                                    ldbDynamicMesh.getAnimations().getList()
-                            ));
+                        dynamic.setDynamicData(DynamicDataMapper.toDynamicData(
+                                dynamic.getTransform(),
+                                ldbDynamicMesh.getAnimations().getList()
+                        ));
 
-                            return dynamic.optimize().joinPolygons().buildPolyGroups();
-                        }
+                        return dynamic.optimize().joinPolygons().buildPolyGroups();
                     }).collect(Collectors.toList());
 
             childs.addAll(dynamicMeshes);

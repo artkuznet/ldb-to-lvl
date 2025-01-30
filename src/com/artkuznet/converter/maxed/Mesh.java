@@ -1,5 +1,6 @@
 package com.artkuznet.converter.maxed;
 
+import com.artkuznet.converter.Options;
 import com.artkuznet.converter.Vector3D;
 
 import java.util.*;
@@ -88,6 +89,10 @@ public class Mesh extends MaxObject {
     }
 
     public Mesh joinPolygons() {
+        if (Options.getInstance().skipJoinPolygons) {
+            return this;
+        }
+
         for (LvlPolygon polygon : polygons) {
             polygon.calculateTriangles();
         }
