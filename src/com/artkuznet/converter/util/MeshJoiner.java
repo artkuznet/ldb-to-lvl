@@ -38,11 +38,6 @@ public class MeshJoiner {
     private static Set<String> computeMeshEdges(Mesh mesh) {
         Set<String> edges = new HashSet<>();
         for (LvlPolygon polygon : mesh.getPolygons()) {
-            // todo fix
-//            if ("dummy".equals(polygon.getMaterialName())) {
-//                continue;
-//            }
-
             String material = polygon.getMaterialName();
             String bitmap = polygon.getBitmapName();
             for (LvlPolygon.Edge edge : polygon.getEdges()) {

@@ -20,9 +20,9 @@ public class Reader {
 
     public int readInt() {
         return this.readByte() & 0xff
-               | this.readByte() << 8 & 0xffff
-               | this.readByte() << 16 & 0xffffff
-               | this.readByte() << 24;
+                | this.readByte() << 8 & 0xffff
+                | this.readByte() << 16 & 0xffffff
+                | this.readByte() << 24;
     }
 
     public double readDouble() {
@@ -62,5 +62,9 @@ public class Reader {
             );
         } catch (final IOException ignored) {
         }
+    }
+
+    public Reader(byte[] data) {
+        this.data = data;
     }
 }

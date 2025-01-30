@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 public class PolygonGrouper {
 
-    private static final double EPSILON = 1e-3;
+    private static final double EPSILON = 1e-6;
 
     public static List<List<VertexPolygon>> groupPolygons(List<VertexPolygon> vertexPolygons) {
         return vertexPolygons.stream()
@@ -22,8 +22,8 @@ public class PolygonGrouper {
                     Map<VertexPolygon, List<VertexPolygon>> adjacency = buildAdjacency(group);
                     return findConnectedComponents(group, adjacency).stream();
                 })
-                .map(PolygonGrouper::split)
-                .flatMap(List::stream)
+//                .map(PolygonGrouper::split)
+//                .flatMap(List::stream)
                 .collect(Collectors.toList());
     }
 

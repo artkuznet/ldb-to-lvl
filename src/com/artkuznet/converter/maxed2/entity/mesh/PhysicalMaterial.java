@@ -1,0 +1,25 @@
+package com.artkuznet.converter.maxed2.entity.mesh;
+
+public enum PhysicalMaterial {
+    DEFAULT,
+    CARDBOARD_HOLLOW,
+    CARDBOARD_SOLID,
+    CONCRETE_HOLLOW,
+    CONCRETE_SOLID,
+    METAL_HOLLOW,
+    METAL_SOLID,
+    WOOD_HOLLOW,
+    WOOD_SOLID,
+    WOOD_FRAME,
+    METAL_BARREL,
+    GLASS_SOLID,
+    PLASTIC_HOLLOW,
+    CARDBOARDBOX_FULL,
+    METAL_HOLLOW_THIN,
+    RUBBER_HOLLOW,
+    PLASTIC,
+    METAL_CHAIR,
+    METAL_SPRAYCAN,
+    METAL_TINCAN,
+    POOL_BALL,
+}

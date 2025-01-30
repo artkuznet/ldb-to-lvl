@@ -1,6 +1,8 @@
 package com.artkuznet.converter;
 
 import com.artkuznet.converter.ldb.MaxLDBReader;
+import com.artkuznet.converter.lv2.LV2;
+import com.artkuznet.converter.lv2.MaxLV2Writer;
 import com.artkuznet.converter.lvl.LVL;
 import com.artkuznet.converter.obj.OBJ;
 
@@ -26,14 +28,27 @@ public class Main {
             System.out.println("Skip polygon joining");
         }
 
+        if (Arrays.stream(args).anyMatch("--lv2"::equalsIgnoreCase)) {
+            options.saveAsLv2 = true;
+            System.out.println("Save as lv2");
+        }
+
         for (String filename : filenames) {
             if (filename.toLowerCase().endsWith(".ldb")) {
                 System.out.printf("Read LDB file: \"%s\"%n", filename);
-                saveLvl(filename.replace(".ldb", ".lvl"), new LVL(new MaxLDBReader(filename).getLdb()));
+                if (options.saveAsLv2) {
+                    throw new RuntimeException("Not implemented yet");
+                } else {
+                    saveLvl(filename.replace(".ldb", ".lvl"), new LVL(new MaxLDBReader(filename).getLdb()));
+                }
             }
             if (filename.toLowerCase().endsWith(".obj")) {
                 System.out.printf("Read OBJ file: \"%s\"%n", filename);
-                saveLvl(filename.replace(".obj", ".lvl"), new LVL(new OBJ(filename)));
+                if (options.saveAsLv2) {
+                    saveLv2(filename.replace(".obj", ".lv2"), new LV2(new OBJ(filename)));
+                } else {
+                    saveLvl(filename.replace(".obj", ".lvl"), new LVL(new OBJ(filename)));
+                }
             }
         }
 
@@ -56,5 +71,10 @@ public class Main {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void saveLv2(String filename, LV2 lv2) {
+        new MaxLV2Writer(lv2, filename).write();
+        System.out.printf("Saved as: \"%s\"%n%n", filename);
     }
 }

@@ -1,11 +1,11 @@
 package com.artkuznet.converter;
 
+import com.artkuznet.converter.ldb.vertex.Vertex;
 import com.artkuznet.converter.ldb.vertex.VertexUV;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 public class Vector3D {
 
@@ -25,6 +25,12 @@ public class Vector3D {
         this.z = 0;
     }
 
+    public Vector3D(Vertex vertex) {
+        this.x = vertex.getX();
+        this.y = vertex.getY();
+        this.z = vertex.getZ();
+    }
+
     public void setX(double x) {
         this.x = x;
     }
@@ -35,14 +41,6 @@ public class Vector3D {
 
     public void setZ(double z) {
         this.z = z;
-    }
-
-    public Vector3D softSmooth() {
-        this.x = (double) Math.round(this.x * 10000000d) / 10000000d;
-        this.y = (double) Math.round(this.y * 10000000d) / 10000000d;
-        this.z = (double) Math.round(this.z * 10000000d) / 10000000d;
-
-        return this;
     }
 
     public Vector3D hardSmooth() {
@@ -65,59 +63,6 @@ public class Vector3D {
         return z;
     }
 
-    public Vector3D rotateAxis(double angle, Vector3D axis) {
-        Vector3D u = axis.clone().normalize();
-        double o = angle * Math.PI / 180.;
-
-        double m00 = Math.cos(o) + u.x * u.x * (1. - Math.cos(o));
-        double m01 = u.x * u.y * (1. - Math.cos(o)) - u.z * Math.sin(o);
-        double m02 = u.x * u.z * (1. - Math.cos(o)) + u.y * Math.sin(o);
-
-        double m10 = u.y * u.x * (1. - Math.cos(o)) + u.z * Math.sin(o);
-        double m11 = Math.cos(o) + u.y * u.y * (1. - Math.cos(o));
-        double m12 = u.y * u.z * (1. - Math.cos(o)) - u.x * Math.sin(o);
-
-        double m20 = u.z * u.x * (1. - Math.cos(o)) - u.y * Math.sin(o);
-        double m21 = u.z * u.y * (1. - Math.cos(o)) + u.x * Math.sin(o);
-        double m22 = Math.cos(o) + u.z * u.z * (1. - Math.cos(o));
-
-        return rotate(new double[][]{
-                new double[]{m00, m01, m02},
-                new double[]{m10, m11, m12},
-                new double[]{m20, m21, m22},
-        });
-    }
-
-    public Vector3D rotateX(double angle) {
-        double rad = angle * Math.PI / 180.0;
-
-        return rotate(new double[][]{
-                new double[]{1, 0, 0},
-                new double[]{0, Math.cos(rad), -Math.sin(rad)},
-                new double[]{0, Math.sin(rad), Math.cos(rad)},
-        });
-    }
-
-    public Vector3D rotateY(double angle) {
-        double rad = angle * Math.PI / 180.0;
-
-        return rotate(new double[][]{
-                new double[]{Math.cos(rad), 0, Math.sin(rad)},
-                new double[]{0, 1, 0},
-                new double[]{-Math.sin(rad), 0, Math.cos(rad)},
-        });
-    }
-
-    public Vector3D rotateZ(double angle) {
-        double rad = angle * Math.PI / 180.0;
-
-        return rotate(new double[][]{
-                new double[]{Math.cos(rad), -Math.sin(rad), 0},
-                new double[]{Math.sin(rad), Math.cos(rad), 0},
-                new double[]{0, 0, 1},
-        });
-    }
-
     public Vector3D multiply(double k) {
         x *= k;
         y *= k;
@@ -126,7 +71,7 @@ public class Vector3D {
         return this;
     }
 
-    public Vector3D multiply(Vector3D p) {
+    public Vector3D multiply(final Vector3D p) {
         double i = this.y * p.z - this.z * p.y;
         double j = this.x * p.z - this.z * p.x;
         double k = this.x * p.y - this.y * p.x;
@@ -134,7 +79,7 @@ public class Vector3D {
         return new Vector3D(i, -j, k);
     }
 
-    public double angle(Vector3D point) {
+    public double angle(final Vector3D point) {
         double ab = x * point.x + y * point.y + z * point.z;
 
         return Math.acos(ab / (this.magnitude() * point.magnitude())) * 180.0 / Math.PI;
@@ -144,7 +89,7 @@ public class Vector3D {
         return Math.sqrt(x * x + y * y + z * z);
     }
 
-    public Vector3D minus(Vector3D point) {
+    public Vector3D minus(final Vector3D point) {
         x -= point.x;
         y -= point.y;
         z -= point.z;
@@ -198,20 +143,6 @@ public class Vector3D {
         return new Vector3D(this.x / u, this.y / u, this.z / u);
     }
 
-    public static Vector3D P(Vector3D n1, Vector3D n2) {
-        Vector3D p = new Vector3D(n1.y * n2.z - n1.z * n2.y, n1.z * n2.x - n1.x * n2.z, n1.x * n2.y - n1.y * n2.x);
-
-        return p.clone().softSmooth().equals(new Vector3D(0, 0, 0)) ? new Vector3D(-1, 0, 0) : p;
-    }
-
-    public static Vector3D center(List<Vector3D> points) {
-        Double x = points.stream().map(Vector3D::getX).reduce(Double::sum).orElseThrow(null);
-        Double y = points.stream().map(Vector3D::getY).reduce(Double::sum).orElseThrow(null);
-        Double z = points.stream().map(Vector3D::getZ).reduce(Double::sum).orElseThrow(null);
-
-        return new Vector3D(x / points.size(), y / points.size(), z / points.size());
-    }
-
     public static Vector3D calculateNormal(Vector3D p1, Vector3D p2, Vector3D p3) {
         Vector3D v1 = p2.clone().minus(p1.clone());
         Vector3D v2 = p3.clone().minus(p1.clone());
@@ -239,31 +170,30 @@ public class Vector3D {
         return points;
     }
 
-    public static List<Vector3D> moveCenter(List<Vector3D> points) {
-        Vector3D center = center(points);
-
-        return points.stream().map(p -> p.clone().minus(center)).collect(Collectors.toList());
+    public static double size(Vector3D vMin, Vector3D vMax) {
+        return vMax.clone().minus(vMin).magnitude();
     }
 
-    public static double sizeX(List<Vector3D> points) {
-        Double min = points.stream().map(Vector3D::getX).min(Double::compareTo).orElseThrow(null);
-        Double max = points.stream().map(Vector3D::getX).max(Double::compareTo).orElseThrow(null);
-
-        return max - min;
+    public static int compare(Vector3D v1, Vector3D v2) {
+        if (v1.getX() != v2.getX()) return Double.compare(v1.getX(), v2.getX());
+        if (v1.getY() != v2.getY()) return Double.compare(v1.getY(), v2.getY());
+        return Double.compare(v1.getZ(), v2.getZ());
     }
 
-    public static double sizeY(List<Vector3D> points) {
-        Double min = points.stream().map(Vector3D::getY).min(Double::compareTo).orElseThrow(null);
-        Double max = points.stream().map(Vector3D::getY).max(Double::compareTo).orElseThrow(null);
-
-        return max - min;
+    public double dotProduct(Vector3D other) {
+        return x * other.x + y * other.y + z * other.z;
     }
 
-    public static boolean roughEquals(Vector3D p1, Vector3D p2) {
-        double dx = Math.abs(p1.x - p2.x);
-        double dy = Math.abs(p1.y - p2.y);
-        double dz = Math.abs(p1.z - p2.z);
-
-        return dx < 0.001 && dy < 0.001 && dz < 0.001;
+    public double get(int coord) {
+        switch (coord) {
+            case 0:
+                return x;
+            case 1:
+                return y;
+            case 2:
+                return z;
+            default:
+                return 0;
+        }
     }
 }

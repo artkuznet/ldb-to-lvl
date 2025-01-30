@@ -1,5 +1,6 @@
 package com.artkuznet.converter.ldb;
 
+import com.artkuznet.converter.MaxTypeReader;
 import com.artkuznet.converter.ldb.animation.Animation;
 import com.artkuznet.converter.ldb.animation.AnimationContainer;
 import com.artkuznet.converter.ldb.animation.Graph;

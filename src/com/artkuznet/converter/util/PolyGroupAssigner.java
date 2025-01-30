@@ -89,7 +89,7 @@ public class PolyGroupAssigner {
                 }
             }
 
-            if (component.size() > 3) { // todo param
+            if (component.size() > 2) { // todo param
                 currentGroup--;
                 for (int idx : component) {
                     polygons[idx].setGeometryPolyGroup(currentGroup);

@@ -185,7 +185,7 @@ public class PolygonProcessor {
             Vector3D uvNormal,
             String bitmapName,
             String materialName,
-            short index
+            int index
     ) {
         VertexPolygon polygon = new VertexPolygon();
 

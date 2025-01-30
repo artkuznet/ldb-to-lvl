@@ -12,6 +12,8 @@ public class DynamicDataMapper {
 
     private static final String KEYFRAME = "Keyframe ";
 
+    private static final double ERROR_SUM = 0.01;
+
     public static DynamicMesh.DynamicData toDynamicData(double[][] transform, List<Animation> animations) {
         DynamicMesh.DynamicData dynamicData = new DynamicMesh.DynamicData();
 
@@ -88,13 +90,13 @@ public class DynamicDataMapper {
         while (true) {
             List<Double> errors = getErrors(points, map);
 
-            Double errorsSum = errors.stream().reduce(Double::sum).orElseThrow(null);
+            Double errorsSum = errors.stream().reduce(Double::sum).orElseThrow(RuntimeException::new);
 
-            if (errorsSum < 0.01) {
+            if (errorsSum < ERROR_SUM) {
                 break;
             }
 
-            Double maxError = errors.stream().max(Double::compareTo).orElseThrow(null);
+            Double maxError = errors.stream().max(Double::compareTo).orElseThrow(RuntimeException::new);
             int maxErrIndex = errors.indexOf(maxError);
 
             map.put(maxErrIndex, points[maxErrIndex]);

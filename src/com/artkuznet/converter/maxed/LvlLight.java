@@ -73,6 +73,6 @@ public class LvlLight extends MaxObject implements PointObject {
 
     @Override
     public String getType() {
-        return "Pointlight";
+        return "DynamicPointlight";
     }
 }

@@ -73,12 +73,21 @@ public class LvlPolygon {
     }
 
     public static class VertexPolygon {
-        public short index;
+        public int index;
         public List<VertexEdge> edges;
         public String materialName;
         public String bitmapName;
         public Vector3D normal;
         public Vector3D uvNormal;
+
+        public VertexPolygon() {
+
+        }
+
+        public VertexPolygon(List<VertexEdge> edges) {
+            this.edges = edges;
+            this.normal = Vector3D.calculateNormal(Vector3D.findTriangle(this.edges.stream().map(e -> e.v1).collect(Collectors.toList())));
+        }
 
         @Override
         public boolean equals(Object o) {
@@ -115,7 +124,7 @@ public class LvlPolygon {
         }
     }
 
-    public short index;
+    public int index;
 
     private int geometryPolyGroup = 0;
 
@@ -132,7 +141,7 @@ public class LvlPolygon {
 
     private Color color = new Color(0, 0, 0);
 
-    public short getIndex() {
+    public int getIndex() {
         return index;
     }
 
@@ -175,12 +184,11 @@ public class LvlPolygon {
         this.scaleV = scaleV;
     }
 
-    // todo vertexUV ?
-    public double[] textureOffset;
+    public double[] textureOffset = new double[]{0, 0};
 
     public double lightIntensity = 1.0;
     public double lightmapResolution = 4.0; // todo param
-    public short pointPolygonIndex = -1;
+    public int pointPolygonIndex = -1;
 
     public static class Triangle {
         public Vector3D normal;
@@ -213,6 +221,9 @@ public class LvlPolygon {
         private final int to;
 
         public Edge(final int from, final int to) {
+            if (from < 0 || to < 0) {
+                throw new RuntimeException();
+            }
             this.from = from;
             this.to = to;
         }
@@ -368,8 +379,13 @@ public class LvlPolygon {
     }
 
     public List<Triangle> getDefaultTriangles(boolean forceTriangulate) {
+
+        if (this.edges.length < 3) {
+            throw new RuntimeException();
+        }
+
         if (!forceTriangulate) {
-            if (this.edges.length <= 4 || !(this instanceof LvlExit)) {
+            if (this.edges.length == 3 || !(this instanceof LvlExit)) {
                 return getSimpleTriangles();
             }
         }
@@ -410,7 +426,7 @@ public class LvlPolygon {
     public Vector3D getDefaultUnk5() {
         Double max = Arrays.stream(new Double[]{normal.getX(), normal.getY(), normal.getZ()})
                 .map(Math::abs)
-                .max(Double::compareTo).orElseThrow(null);
+                .max(Double::compareTo).orElseThrow(RuntimeException::new);
 
         return new Vector3D(
                 (Math.abs(normal.getX()) >= max) ? (normal.getX() > 0 ? 1.0 : -1.0) : 0.0,
@@ -471,13 +487,13 @@ public class LvlPolygon {
             return;
         }
 
-        int minR = rgb.stream().map(c -> c[0]).min(Integer::compareTo).orElseThrow(null);
-        int minG = rgb.stream().map(c -> c[1]).min(Integer::compareTo).orElseThrow(null);
-        int minB = rgb.stream().map(c -> c[2]).min(Integer::compareTo).orElseThrow(null);
+        int minR = rgb.stream().map(c -> c[0]).min(Integer::compareTo).orElseThrow(RuntimeException::new);
+        int minG = rgb.stream().map(c -> c[1]).min(Integer::compareTo).orElseThrow(RuntimeException::new);
+        int minB = rgb.stream().map(c -> c[2]).min(Integer::compareTo).orElseThrow(RuntimeException::new);
 
-        int maxR = rgb.stream().map(c -> c[0]).max(Integer::compareTo).orElseThrow(null);
-        int maxG = rgb.stream().map(c -> c[1]).max(Integer::compareTo).orElseThrow(null);
-        int maxB = rgb.stream().map(c -> c[2]).max(Integer::compareTo).orElseThrow(null);
+        int maxR = rgb.stream().map(c -> c[0]).max(Integer::compareTo).orElseThrow(RuntimeException::new);
+        int maxG = rgb.stream().map(c -> c[1]).max(Integer::compareTo).orElseThrow(RuntimeException::new);
+        int maxB = rgb.stream().map(c -> c[2]).max(Integer::compareTo).orElseThrow(RuntimeException::new);
 
         int delta = 2;
 
