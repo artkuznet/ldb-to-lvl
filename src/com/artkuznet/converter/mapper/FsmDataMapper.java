@@ -53,7 +53,7 @@ public class FsmDataMapper {
     public FloatingFSM.FSMData toFSMData(MaxObject object, LdbFSM ldbFSM, LdbDynamicMesh ldbDynamicMesh) {
         FloatingFSM.FSMData fsmData = new FloatingFSM.FSMData();
 
-        if (Options.getInstance().skipDynamicFSM) {
+        if (object instanceof Dynamic && Options.getInstance().skipDynamicFSM) {
             return fsmData;
         }
 
