@@ -1,5 +1,7 @@
 package com.artkuznet.converter.ldb.vertex;
 
+import com.artkuznet.converter.Vector3D;
+
 public class VertexUV {
 
     private float u;
@@ -8,6 +10,11 @@ public class VertexUV {
     public VertexUV(float u, float v) {
         this.u = u;
         this.v = v;
+    }
+
+    public VertexUV(Vector3D v) {
+        this.u = (float) v.getX();
+        this.v = (float) v.getY();
     }
 
     public float getU() {

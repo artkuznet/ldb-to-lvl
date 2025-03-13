@@ -25,6 +25,18 @@ public class Vector3D {
         this.z = 0;
     }
 
+    public void setX(double x) {
+        this.x = x;
+    }
+
+    public void setY(double y) {
+        this.y = y;
+    }
+
+    public void setZ(double z) {
+        this.z = z;
+    }
+
     public Vector3D softSmooth() {
         this.x = (double) Math.round(this.x * 10000000d) / 10000000d;
         this.y = (double) Math.round(this.y * 10000000d) / 10000000d;

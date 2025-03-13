@@ -1,6 +1,8 @@
 package com.artkuznet.converter.maxed;
 
 import com.artkuznet.converter.Vector3D;
+import com.artkuznet.converter.ldb.vertex.VertexUV;
+import com.artkuznet.converter.util.VectorCalculator;
 
 import java.util.*;
 import java.util.function.Function;
@@ -314,130 +316,13 @@ public class LvlPolygon {
     }
 
     public void calculateScaleUV() {
-        Vector3D pNormal = this.normal.clone();
+        Vector3D[] vectors = VectorCalculator.calculateUVVectors(
+                this.testVertices,
+                this.UV.stream().map(VertexUV::new).collect(Collectors.toList())
+        );
 
-        List<Vector3D> triangleUV = Vector3D.findTriangle(this.UV);
-
-        Vector3D uvN = Vector3D.calculateNormal(triangleUV.get(0), triangleUV.get(1), triangleUV.get(2));
-
-        Vector3D axisP = Vector3D.P(pNormal, uvN);
-        double angleP = pNormal.angle(uvN);
-
-        List<Vector3D> testVertsCenter = Vector3D.moveCenter(this.testVertices);
-
-        List<Vector3D> testVertsUV = Vector3D.moveCenter(this.UV).stream().collect(Collectors.toList());
-
-        List<Vector3D> flatVertsXY = testVertsCenter.stream()
-                .map(v -> v.clone().rotateAxis(-angleP, axisP))
-                .collect(Collectors.toList());
-
-        double uvSizeX = Vector3D.sizeX(testVertsUV);
-        double uvSizeY = Vector3D.sizeY(testVertsUV);
-
-        List<Double> uvX = testVertsUV.stream().map(Vector3D::getX).collect(Collectors.toList());
-        double uvLx1 = uvX.get(2) - uvX.get(1);
-        double uvLx2 = uvX.get(1) - uvX.get(0);
-        double uvKx1 = uvLx1 / uvSizeX;
-        double uvKx2 = uvLx2 / uvSizeX;
-
-        List<Double> uvY = testVertsUV.stream().map(Vector3D::getY).collect(Collectors.toList());
-        double uvLy1 = uvY.get(2) - uvY.get(1);
-        double uvLy2 = uvY.get(1) - uvY.get(0);
-        double uvKy1 = uvLy1 / uvSizeY;
-        double uvKy2 = uvLy2 / uvSizeY;
-
-        double from = -180;
-        double to = 180;
-
-        double calculatedAngle = 0;
-        for (int i = 0; i < 10; i++) {
-            double step = (to - from) / 180.0;
-            Map<Double, Double> vals = findValues(from, to, step, flatVertsXY, uvKx1, uvKx2, uvKy1, uvKy2);
-            Map.Entry<Double, Double> min = findMinEntry(vals);
-
-            double d = ((to - from) / 2.0) / 4.0;
-
-            from = min.getKey() - d;
-            to = min.getKey() + d;
-
-            calculatedAngle = min.getKey();
-
-            if (min.getValue() < 0.0000001 || step < 0.000000000001) {
-                break;
-            }
-        }
-
-        double finalCalcAngle = calculatedAngle;
-        List<Vector3D> newVertsXY = flatVertsXY.stream().map(v -> v.clone().rotateZ(finalCalcAngle)).collect(Collectors.toList());
-
-        Vector3D baseVector = uvN.clone().rotateY(90 * (uvN.clone().hardSmooth().equals(new Vector3D(0, 0, 1)) ? -1 : 1));
-
-        this.scaleU = baseVector.clone()
-                .multiply(Vector3D.sizeX(newVertsXY) / this.sizeUV[0])
-                .rotateZ(-calculatedAngle)
-                .rotateAxis(angleP, axisP);
-
-        this.scaleV = baseVector.clone()
-                .multiply(Vector3D.sizeY(newVertsXY) / this.sizeUV[1])
-                .rotateZ(-calculatedAngle - 90)
-                .rotateAxis(angleP, axisP);
-    }
-
-    public static Map.Entry<Double, Double> findMinEntry(Map<Double, Double> vals) {
-        Map.Entry<Double, Double> min = null;
-        for (Map.Entry<Double, Double> entry : vals.entrySet()) {
-            if (min == null || min.getValue() > entry.getValue()) {
-                min = entry;
-            }
-        }
-        return min;
-    }
-
-    private static Map<Double, Double> findValues(
-            double from,
-            double to,
-            double step,
-            List<Vector3D> flatVertsXY,
-            double uvKx1,
-            double uvKx2,
-            double uvKy1,
-            double uvKy2
-    ) {
-        Map<Double, Double> values = new HashMap<>();
-
-        for (double angle = from; angle <= to; angle += step) {
-            double finalAngle = angle;
-            List<Vector3D> newVertsXY = flatVertsXY.stream().map(v -> v.clone().rotateZ(finalAngle)).collect(Collectors.toList());
-
-            double newSizeX = Vector3D.sizeX(newVertsXY);
-            double newSizeY = Vector3D.sizeY(newVertsXY);
-
-            List<Double> newX = newVertsXY.stream().map(Vector3D::getX).collect(Collectors.toList());
-            double newLx1 = newX.get(2) - newX.get(1);
-            double newLx2 = newX.get(1) - newX.get(0);
-            double newKx1 = newLx1 / newSizeX;
-            double newKx2 = newLx2 / newSizeX;
-
-            List<Double> newY = newVertsXY.stream().map(Vector3D::getY).collect(Collectors.toList());
-            double newLy1 = newY.get(2) - newY.get(1);
-            double newLy2 = newY.get(1) - newY.get(0);
-            double newKy1 = newLy1 / newSizeY;
-            double newKy2 = newLy2 / newSizeY;
-
-            double e1 = Math.abs(newKx1 - uvKx1);
-            double e2 = Math.abs(newKx2 - uvKx2);
-            double e3 = Math.abs(newKy1 - uvKy1);
-            double e4 = Math.abs(newKy2 - uvKy2);
-
-            double eSumX = e1 * e1 + e2 * e2;
-            double eSumY = e3 * e3 + e4 * e4;
-
-            double eSum = Math.abs(eSumX - eSumY) + (eSumX + eSumY);
-
-            values.put(angle, eSum);
-        }
-
-        return values;
+        this.scaleU = vectors[0];
+        this.scaleV = vectors[1];
     }
 
     public LvlPolygon join(List<LvlPolygon> polygons) {
