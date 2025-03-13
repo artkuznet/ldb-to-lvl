@@ -2,6 +2,7 @@ package com.artkuznet.converter.maxed;
 
 import com.artkuznet.converter.Vector3D;
 import com.artkuznet.converter.ldb.vertex.VertexUV;
+import com.artkuznet.converter.util.Triangulator;
 import com.artkuznet.converter.util.VectorCalculator;
 
 import java.util.*;
@@ -240,67 +241,24 @@ public class LvlPolygon {
                 t.vertices.add(edge.getTo());
             }
 
-            return Arrays.asList(t);
+            return Collections.singletonList(t);
         }
 
-        List<Vector3D> vertsCopy = new ArrayList<>(Arrays.stream(this.parentMesh.getVertices()).collect(Collectors.toList()));
+        List<Vector3D> vertsCopy = Arrays.stream(this.parentMesh.getVertices()).collect(Collectors.toList());
 
         List<Vector3D> verts = Arrays.stream(this.edges)
                 .map(edge -> vertsCopy.get(edge.getTo()))
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        double[] polygons = new double[verts.size() * 3];
+        List<List<Vector3D>> triangulatedVertices = Triangulator.triangulate(verts);
 
-        for (int i = 0, j = 0; j < verts.size(); i += 3, j++) {
-            polygons[i] = verts.get(j).getX();
-            polygons[i + 1] = verts.get(j).getY();
-            polygons[i + 2] = verts.get(j).getZ();
-        }
-
-        List<Integer> earcut = Earcut.earcut(polygons, null, 3);
-
-        if (earcut.size() % 3 != 0) {
-            throw new RuntimeException();
-        }
-
-        if (earcut.isEmpty()) {
-            Triangle t = new Triangle();
-            t.normal = normal.clone();
-            t.vertices = new ArrayList<>();
-
-            for (Edge edge : edges) {
-                t.vertices.add(edge.getTo());
-            }
-
-            return Arrays.asList(t);
-        }
-
-        Vector3D nCalc = Vector3D.calculateNormal(
-                verts.get(earcut.get(0)),
-                verts.get(earcut.get(1)),
-                verts.get(earcut.get(2))
-        );
-
-        if (!Vector3D.roughEquals(normal, nCalc)) {
-            Collections.reverse(earcut);
-        }
-
-        List<Triangle> triangleList = new ArrayList<>();
-
-        for (int i = 0; i < earcut.size(); i += 3) {
-            Triangle triangle = new Triangle();
-            triangle.normal = normal.clone();
-
-            triangle.vertices = new ArrayList<>();
-
-            triangle.vertices.add(vertsCopy.indexOf(verts.get(earcut.get(i))));
-            triangle.vertices.add(vertsCopy.indexOf(verts.get(earcut.get(i + 1))));
-            triangle.vertices.add(vertsCopy.indexOf(verts.get(earcut.get(i + 2))));
-
-            triangleList.add(triangle);
-        }
-
-        return triangleList;
+        return triangulatedVertices.stream()
+                .map(v -> {
+                    Triangle t = new Triangle();
+                    t.normal = normal.clone();
+                    t.vertices = v.stream().map(vertsCopy::indexOf).collect(Collectors.toList());
+                    return t;
+                }).collect(Collectors.toList());
     }
 
     public Vector3D getDefaultUnk5() {
