@@ -522,6 +522,7 @@ public class LVL {
             });
 
             mesh.setName(roomName);
+            mesh.setAiNetDensity(room.getAiNetDensity());
             mesh.setFlipFaces(true);
             mesh.setVertices(lvlVertexList.toArray(new Vector3D[0]));
             mesh.setPolygons(emptyRoom.toArray(new LvlPolygon[0]));
@@ -826,7 +827,10 @@ public class LVL {
                 data.addAll(toBytes(0));
 
                 // color RGBA
-                byte rgba = "laser".equalsIgnoreCase(polygon.getMaterialName()) ? (byte) 255 : 0;
+                byte rgba = "laser".equalsIgnoreCase(polygon.getMaterialName())
+                        || "lights".equalsIgnoreCase(polygon.getMaterialName()) // todo feature flag
+                        ? (byte) 255
+                        : 0;
                 data.add(rgba);
                 data.add(rgba);
                 data.add(rgba);
@@ -939,17 +943,11 @@ public class LVL {
             data.addAll(toBytes(((Mesh) object).flags));
 
             data.add((byte) (((Mesh) object).bulletCollisions ? 1 : 0));
-            data.add((byte) 0);
 
-            if (object instanceof Dynamic) {
-                data.addAll(toBytes(new byte[]{0, -128}));
-            } else {
-                data.addAll(toBytes(new byte[]{20, -1}));
-            }
+            data.addAll(toBytes(((Mesh) object).getAiNetDensity()));
 
             data.addAll(toBytes(
                     new byte[]{
-                            (byte) 63,
                             (byte) (object instanceof Dynamic ? 1 : 0), // cast no shadows
                             (byte) 1,
                             (byte) (((Mesh) object).blockExplosions ? 1 : 0)

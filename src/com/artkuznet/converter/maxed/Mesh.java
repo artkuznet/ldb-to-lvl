@@ -2,6 +2,10 @@ package com.artkuznet.converter.maxed;
 
 import com.artkuznet.converter.Options;
 import com.artkuznet.converter.Vector3D;
+import com.artkuznet.converter.ldb.vertex.VertexUV;
+import com.artkuznet.converter.util.ContourFinder;
+import com.artkuznet.converter.util.PolygonGrouper;
+import com.artkuznet.converter.util.PolygonProcessor;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -13,6 +17,8 @@ public class Mesh extends MaxObject {
     private PolyGroup[] polyGroups = new PolyGroup[0];
 
     private boolean isFlipFaces;
+
+    private float aiNetDensity = 1.0f;
 
     public byte[] flags = new byte[]{1, 0, 0, 0, 0, 0, 0};
 
@@ -35,8 +41,16 @@ public class Mesh extends MaxObject {
         return isFlipFaces;
     }
 
+    public float getAiNetDensity() {
+        return aiNetDensity;
+    }
+
     public void setFlipFaces(final boolean flipFaces) {
         isFlipFaces = flipFaces;
+    }
+
+    public void setAiNetDensity(float aiNetDensity) {
+        this.aiNetDensity = aiNetDensity;
     }
 
     public void setPolygons(final LvlPolygon[] polygons) {
@@ -97,79 +111,84 @@ public class Mesh extends MaxObject {
             polygon.calculateTriangles();
         }
 
-        List<LvlPolygon> polygonList = new ArrayList<>(Arrays.stream(this.polygons).collect(Collectors.toList()));
+        List<LvlPolygon> polygonList = Arrays.stream(this.polygons).collect(Collectors.toList());
 
-        polygonList.forEach(polygon -> {
-            List<Short> neighborsToJoin = polygonList.stream()
-                    .filter(p -> p.index != polygon.index
-                            && p.normal.clone().softSmooth().equals(polygon.normal.clone().softSmooth())
-                            && p.getMaterialName().equals(polygon.getMaterialName())
-                            && p.getBitmapName().equals(polygon.getBitmapName())
-                            && LvlPolygon.hasSharedEdgeAndUV(p, polygon)
+        List<LvlPolygon.VertexPolygon> vertexPolygons = polygonList.stream()
+                .filter(lvlPolygon -> !(lvlPolygon instanceof LvlExit))
+                .map(lvlPolygon -> {
+                    LvlPolygon.VertexPolygon vPolygon = new LvlPolygon.VertexPolygon();
+
+                    vPolygon.index = lvlPolygon.index;
+                    vPolygon.materialName = lvlPolygon.getMaterialName();
+                    vPolygon.bitmapName = lvlPolygon.getBitmapName();
+                    vPolygon.normal = lvlPolygon.normal.clone();
+                    vPolygon.uvNormal = Vector3D.calculateNormal(Vector3D.findTriangle(lvlPolygon.UV)).softSmooth();
+
+                    vPolygon.edges = new ArrayList<>();
+
+                    for (int i = 0; i < lvlPolygon.getEdges().length; i++) {
+                        LvlPolygon.Edge edge = lvlPolygon.getEdges()[i];
+
+                        LvlPolygon.VertexEdge vEdge = new LvlPolygon.VertexEdge();
+
+                        vEdge.v1 = vertices[edge.getFrom()];
+                        vEdge.v2 = vertices[edge.getTo()];
+
+                        vEdge.uv1 = new VertexUV(lvlPolygon.UV.get(i));
+                        vEdge.uv2 = new VertexUV(lvlPolygon.UV.get((i + 1) % lvlPolygon.UV.size()));
+
+                        vPolygon.edges.add(vEdge);
+                    }
+
+                    return vPolygon;
+                }).collect(Collectors.toList());
+
+
+        List<List<LvlPolygon.VertexPolygon>> vGroups = PolygonGrouper.groupPolygons(vertexPolygons).stream()
+                .map(PolygonProcessor::processPolygons)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        List<Vector3D> verticesList = Arrays.stream(vertices).collect(Collectors.toList());
+
+        List<LvlPolygon> lvlPolygonList = Arrays.stream(this.polygons).collect(Collectors.toList());
+
+        List<LvlPolygon> joinedPolygons = vGroups.stream().map(vPolygons -> {
+
+            LvlPolygon p1 = lvlPolygonList.stream().filter(p -> p.index == vPolygons.get(0).index).findFirst().orElseThrow(null);
+
+            List<Short> groupedIndices = vPolygons.stream().map(vp -> vp.index).collect(Collectors.toList());
+
+            List<LvlPolygon.Triangle> allTriangles = lvlPolygonList.stream().filter(p -> groupedIndices.contains(p.index))
+                    .map(LvlPolygon::getTriangles)
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+
+
+            List<LvlPolygon.VertexEdge> vEdges = ContourFinder.findContours(vPolygons).stream()
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+
+            p1.setEdges(vEdges.stream()
+                    .map(vertexEdge ->
+                            new LvlPolygon.Edge(verticesList.indexOf(vertexEdge.v1), verticesList.indexOf(vertexEdge.v2))
                     )
-                    .map(LvlPolygon::getIndex).collect(Collectors.toList());
-            polygon.neighborToJoinIndices = neighborsToJoin;
-        });
-
-        List<List<LvlPolygon>> groupsToJoin = new ArrayList<List<LvlPolygon>>();
-
-        boolean allCollected = false;
-        do {
-            LvlPolygon notJoinedPolygon = polygonList.stream().filter(p -> !p.joined).findFirst().orElse(null);
-
-            if (Objects.isNull(notJoinedPolygon)) {
-                allCollected = true;
-                break;
-            }
-
-            List<Short> collection = new ArrayList<>();
-            collectPolygonsToJoin(collection, polygonList, notJoinedPolygon.index);
-
-            if (collection.isEmpty()) {
-                continue;
-            }
-
-            groupsToJoin.add(
-                    collection.stream()
-                            .map(idx -> polygonList.stream()
-                                    .filter(p -> p.index == idx).findFirst()
-                                    .orElseThrow(null)
-                            ).collect(Collectors.toList())
+                    .toArray(LvlPolygon.Edge[]::new)
             );
 
-        } while (!allCollected);
+            p1.setTriangles(allTriangles);
 
-        List<LvlPolygon> finalList = new ArrayList<>();
+            return p1;
+        }).collect(Collectors.toList());
 
-        for (List<LvlPolygon> group : groupsToJoin) {
-            if (group.size() == 1) {
-                finalList.add(group.get(0));
-            } else {
-                List<LvlPolygon> mutableGroup = new ArrayList<>(group);
-                LvlPolygon p = mutableGroup.remove(0);
-                finalList.add(p.join(mutableGroup));
-            }
-        }
+        joinedPolygons.addAll(polygonList.stream()
+                .filter(p -> p instanceof LvlExit)
+                .collect(Collectors.toList())
+        );
 
-        this.polygons = finalList.toArray(new LvlPolygon[0]);
+        this.polygons = joinedPolygons.toArray(new LvlPolygon[0]);
 
         return this;
-    }
-
-    private void collectPolygonsToJoin(List<Short> container, List<LvlPolygon> polygons, Short pIndex) {
-        LvlPolygon p = polygons.stream().filter(lvlPolygon -> lvlPolygon.index == pIndex).findFirst().orElseThrow(null);
-
-        if (p.joined || container.contains(p.index)) {
-            p.joined = true;
-            return;
-        }
-
-        p.joined = true;
-        container.add(p.index);
-
-        for (Short n : p.neighborToJoinIndices) {
-            collectPolygonsToJoin(container, polygons, n);
-        }
     }
 
     public Mesh buildPolyGroups() {
@@ -265,6 +284,6 @@ public class Mesh extends MaxObject {
         Vector3D v1 = transformPosition.clone().minus(min.clone().multiply(-1));
         Vector3D v2 = transformPosition.clone().minus(max.clone().multiply(-1));
 
-        this.position = new double[]{v1.getX(), v1.getY(), v1.getZ(), v2.getX(), v2.getY(), v2.getZ(), 0};
+        this.position = new double[]{v1.getX(), v1.getY(), v1.getZ(), v2.getX(), v2.getY(), v2.getZ(), v1.clone().minus(v2.clone()).magnitude() / 2.0};
     }
 }

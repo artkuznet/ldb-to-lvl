@@ -6,11 +6,71 @@ import com.artkuznet.converter.util.Triangulator;
 import com.artkuznet.converter.util.VectorCalculator;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class LvlPolygon {
+
+    public void setEdges(Edge[] edges) {
+        this.edges = edges;
+    }
+
+    public static class VertexEdge {
+        public Vector3D v1;
+        public Vector3D v2;
+        public VertexUV uv1;
+        public VertexUV uv2;
+
+        public VertexEdge() {
+
+        }
+
+        public VertexEdge(Vector3D v1, Vector3D v2) {
+            this.v1 = v1;
+            this.v2 = v2;
+        }
+
+        private static VertexEdge normalize(VertexEdge edge) {
+            if (compareVectors(edge.v1, edge.v2) <= 0) {
+                return new VertexEdge(edge.v1, edge.v2);
+            } else {
+                return new VertexEdge(edge.v2, edge.v1);
+            }
+        }
+
+        private static int compareVectors(Vector3D a, Vector3D b) {
+            int cmp = Double.compare(a.getX(), b.getX());
+            if (cmp != 0) return cmp;
+            cmp = Double.compare(a.getY(), b.getY());
+            if (cmp != 0) return cmp;
+            return Double.compare(a.getZ(), b.getZ());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            VertexEdge that = (VertexEdge) o;
+            VertexEdge thisNorm = normalize(this);
+            VertexEdge thatNorm = normalize(that);
+            return thisNorm.v1.equals(thatNorm.v1) && thisNorm.v2.equals(thatNorm.v2);
+        }
+
+        @Override
+        public int hashCode() {
+            VertexEdge norm = normalize(this);
+            return Objects.hash(norm.v1, norm.v2);
+        }
+
+    }
+
+    public static class VertexPolygon {
+        public short index;
+        public List<VertexEdge> edges;
+        public String materialName;
+        public String bitmapName;
+        public Vector3D normal;
+        public Vector3D uvNormal;
+    }
 
     public short index;
 
@@ -28,11 +88,8 @@ public class LvlPolygon {
     }
 
     public List<Short> neighborIndices = new ArrayList<>();
-    public List<Short> neighborToJoinIndices = new ArrayList<>();
 
     public boolean grouped = false;
-
-    public boolean joined = false;
 
     public List<Vector3D> testVertices;
 
@@ -57,7 +114,7 @@ public class LvlPolygon {
     public double[] textureOffset;
 
     public double lightIntensity = 1.0;
-    public double lightmapResolution = 2.0;
+    public double lightmapResolution = 4.0;
     public short pointPolygonIndex = -1;
 
     public static class Triangle {
@@ -227,6 +284,10 @@ public class LvlPolygon {
         this.triangles = getDefaultTriangles();
     }
 
+    public void setTriangles(List<Triangle> triangles) {
+        this.triangles = triangles;
+    }
+
     public List<Triangle> getDefaultTriangles() {
         if (triangles != null) {
             return triangles;
@@ -281,90 +342,5 @@ public class LvlPolygon {
 
         this.scaleU = vectors[0];
         this.scaleV = vectors[1];
-    }
-
-    public LvlPolygon join(List<LvlPolygon> polygons) {
-        if (polygons.stream().map(LvlPolygon::getIndex).collect(Collectors.toSet()).contains(this.index)) {
-            throw new RuntimeException("join failed");
-        }
-
-        List<Triangle> joinedTriangles = new ArrayList<>(this.triangles);
-        joinedTriangles.addAll(polygons.stream().map(p -> p.triangles).flatMap(List::stream).collect(Collectors.toList()));
-        this.triangles = joinedTriangles;
-
-        List<Edge> edges = this.triangles.stream()
-                .map((Function<Triangle, List<Edge>>) triangle -> IntStream.range(0, triangle.vertices.size())
-                        .mapToObj(i -> new Edge(
-                                triangle.vertices.get(i),
-                                triangle.vertices.get(i == triangle.vertices.size() - 1 ? 0 : i + 1))
-                        )
-                        .collect(Collectors.toCollection(ArrayList::new))
-                ).flatMap(List::stream).collect(Collectors.toList());
-
-        List<Edge> facedEdges = new ArrayList<>();
-        for (Edge edge : edges) {
-            if (edges.stream().filter(edge::equals).count() == 1) {
-                facedEdges.add(edge);
-            }
-        }
-
-        List<List<Edge>> faces = new ArrayList<>();
-        while (!facedEdges.isEmpty()) {
-            List<Edge> face = new ArrayList<>();
-            Edge edgeStart = facedEdges.remove(0);
-            face.add(edgeStart);
-
-            while (true) {
-                Edge finalEdgeStart = edgeStart;
-                Edge edgeNext = facedEdges.stream()
-                        .filter(e -> finalEdgeStart.to == e.from)
-                        .findFirst()
-                        .orElse(null);
-
-                if (edgeNext == null) {
-                    break;
-                }
-
-                face.add(edgeNext);
-                facedEdges.remove(edgeNext);
-                edgeStart = edgeNext;
-            }
-
-            faces.add(face);
-        }
-
-        this.edges = faces.stream().flatMap(List::stream).toArray(Edge[]::new);
-
-        return this;
-    }
-
-    public static boolean hasSharedEdgeAndUV(LvlPolygon polygon1, LvlPolygon polygon2) {
-        if (polygon1.UV == null || polygon2.UV == null) {
-            return false;
-        }
-
-        for (int i = 0; i < polygon1.edges.length; i++) {
-            for (int j = 0; j < polygon2.edges.length; j++) {
-                if (polygon1.edges[i].equals(polygon2.edges[j])) {
-                    Vector3D e1uv1 = polygon1.UV.get(i).clone().softSmooth();
-                    Vector3D e1uv2 = polygon1.UV.get(i == polygon1.edges.length - 1 ? 0 : (1 + i)).clone().softSmooth();
-
-                    Vector3D e2uv1 = polygon2.UV.get(j).clone().softSmooth();
-                    Vector3D e2uv2 = polygon2.UV.get(j == polygon2.edges.length - 1 ? 0 : (1 + j)).clone().softSmooth();
-
-                    Vector3D n1 = Vector3D.calculateNormal(Vector3D.findTriangle(polygon1.UV)).softSmooth();
-                    Vector3D n2 = Vector3D.calculateNormal(Vector3D.findTriangle(polygon2.UV)).softSmooth();
-
-                    if (n1.equals(n2)
-                            && polygon1.normal.clone().softSmooth().equals(polygon2.normal.clone().softSmooth())
-                            && (e1uv1.equals(e2uv1) && e1uv2.equals(e2uv2) || e1uv1.equals(e2uv2) && e1uv2.equals(e2uv1))
-                    ) {
-                        return true;
-                    }
-                }
-            }
-        }
-
-        return false;
     }
 }

@@ -15,6 +15,7 @@ public class Room {
     private List<String> dynamicMeshes;
     private List<String> levelItems;
     private List<Integer> pointLights;
+    private float aiNetDensity;
 
     public Room(
             int id,
@@ -28,7 +29,8 @@ public class Room {
             List<String> triggers,
             List<String> dynamicMeshes,
             List<String> levelItems,
-            List<Integer> pointLights
+            List<Integer> pointLights,
+            float aiNetDensity
     ) {
         this.id = id;
         this.name = name;
@@ -42,6 +44,7 @@ public class Room {
         this.dynamicMeshes = dynamicMeshes;
         this.levelItems = levelItems;
         this.pointLights = pointLights;
+        this.aiNetDensity = aiNetDensity;
     }
 
     public int getId() {
@@ -90,5 +93,9 @@ public class Room {
 
     public List<Integer> getPointLights() {
         return pointLights;
+    }
+
+    public float getAiNetDensity() {
+        return aiNetDensity;
     }
 }

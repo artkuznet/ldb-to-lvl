@@ -884,7 +884,7 @@ public class MaxLDBReader {
 
             String room_name = (String) reader.readObject();
 
-            Object aiNetDensity = reader.readObject();
+            float aiNetDensity = (float) reader.readObject();
 
             ldb.getRooms().add(new Room(
                     id,
@@ -898,7 +898,8 @@ public class MaxLDBReader {
                     triggers,
                     dynamic_meshes,
                     level_items,
-                    point_lights
+                    point_lights,
+                    aiNetDensity
             ));
 
             reader.readObject();
