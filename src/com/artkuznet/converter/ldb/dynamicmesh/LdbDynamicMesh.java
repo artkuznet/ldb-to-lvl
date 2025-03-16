@@ -55,15 +55,17 @@ public class LdbDynamicMesh {
         List<Vertex> vertices = new ArrayList<>();
         List<Vertex> normals = new ArrayList<>();
         List<VertexUV> uv = new ArrayList<>();
+        List<VertexUV> lightmapUv = new ArrayList<>();
 
         for (int i = 0; i < polygon.getNumVertices(); i++) {
             TextureVertex textureVertex = this.textureVertices.getList().get(polygon.getTextureVertexIdx() + i);
             vertices.add(this.vertices.getList().get(textureVertex.getVertexIdx()));
             normals.add(this.normals.getList().get(textureVertex.getVertexIdx()));
             uv.add(textureVertex.getUV());
+            lightmapUv.add(textureVertex.getLightmapUV());
         }
 
-        return new Geometry(polygon.getId(), vertices, normals, uv, polygon.getMaterial());
+        return new Geometry(polygon.getId(), vertices, normals, uv, lightmapUv, polygon.getMaterial());
     }
 
     public String getSharedName() {

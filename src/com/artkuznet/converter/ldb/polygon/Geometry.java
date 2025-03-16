@@ -11,6 +11,7 @@ public class Geometry {
     private List<Vertex> vertices;
     private List<Vertex> normals;
     private List<VertexUV> uv;
+    private List<VertexUV> lightmapUv;
     private Material material;
 
     public int getPolygonId() {
@@ -24,12 +25,14 @@ public class Geometry {
             List<Vertex> vertices,
             List<Vertex> normals,
             List<VertexUV> uv,
+            List<VertexUV> lightmapUv,
             Material material
     ) {
         this.polygonId = polygonId;
         this.vertices = vertices;
         this.normals = normals;
         this.uv = uv;
+        this.lightmapUv = lightmapUv;
         this.material = material;
     }
 
@@ -41,28 +44,16 @@ public class Geometry {
         return uv;
     }
 
+    public List<VertexUV> getLightmapUv() {
+        return lightmapUv;
+    }
+
     public Material getMaterial() {
         return material;
     }
 
-    public VertexUV getUvSize() {
-        Float minU = uv.stream().map(VertexUV::getU).min(Float::compareTo).orElseThrow(null);
-        Float maxU = uv.stream().map(VertexUV::getU).max(Float::compareTo).orElseThrow(null);
-
-        Float minV = uv.stream().map(VertexUV::getV).min(Float::compareTo).orElseThrow(null);
-        Float maxV = uv.stream().map(VertexUV::getV).max(Float::compareTo).orElseThrow(null);
-
-        return new VertexUV(maxU - minU, maxV - minV);
-    }
-
     public double[] getTextureOffset() {
-        Float maxU = uv.stream().map(VertexUV::getU).max(Float::compareTo).orElseThrow(null);
-        Float maxV = uv.stream().map(VertexUV::getV).max(Float::compareTo).orElseThrow(null);
-
-        maxU = uv.get(0).getU();
-        maxV = uv.get(0).getV();
-
-        return new double[]{maxU, maxV};
+        return new double[]{uv.get(0).getU(), uv.get(0).getV()};
     }
 
     public Vector3D getFirstVertex() {

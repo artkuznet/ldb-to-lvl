@@ -5,15 +5,16 @@ import com.artkuznet.converter.ldb.MaxLDB;
 import com.artkuznet.converter.ldb.character.Character;
 import com.artkuznet.converter.ldb.dynamicmesh.LdbDynamicMesh;
 import com.artkuznet.converter.ldb.fsm.LdbFSM;
+import com.artkuznet.converter.ldb.lightmap.LightmapTexture;
 import com.artkuznet.converter.ldb.material.Material;
 import com.artkuznet.converter.ldb.polygon.Geometry;
 import com.artkuznet.converter.ldb.polygon.Polygon;
 import com.artkuznet.converter.ldb.staticmesh.StaticMesh;
 import com.artkuznet.converter.ldb.vertex.Vertex;
-import com.artkuznet.converter.ldb.vertex.VertexUV;
 import com.artkuznet.converter.mapper.DynamicDataMapper;
 import com.artkuznet.converter.mapper.FsmDataMapper;
 import com.artkuznet.converter.maxed.*;
+import com.artkuznet.converter.util.TgaParser;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -120,6 +121,8 @@ public class LVL {
         final int[] meshCounter = {-1};
         final int[] pointlightCounter = {-1};
 
+        Set<TgaParser.TgaImage> lightmapTgaList = new HashSet<>();
+
         List<Mesh> rooms = ldb.getRooms().getList().stream().map(room -> {
             Integer staticMeshId = room.getStaticMeshes().stream().findFirst().orElseThrow(null);
             StaticMesh roomMesh = ldb.getStaticMeshes().getById(staticMeshId);
@@ -141,7 +144,6 @@ public class LVL {
             final List<LvlPolygon> lvlPolygons = new ArrayList<>();
             geometries.forEach(geometry -> {
                 List<Vertex> vertices = geometry.getVertices();
-                VertexUV sizeUV = geometry.getUvSize();
 
                 Polygon geometryPolygon = roomMesh.getPolygons().getById(geometry.getPolygonId());
                 Vertex normal = geometryPolygon.getNormal();
@@ -173,8 +175,7 @@ public class LVL {
                 poly.unkVertex2 = geometry.getFirstVertex();
                 poly.unkVector1 = poly.getDefaultUnk5();
 
-                poly.sizeUV = new double[]{sizeUV.getU(), sizeUV.getV()};
-                poly.UV = geometry.getUv().stream().map(Vector3D::new).collect(Collectors.toList());
+                poly.UV = geometry.getUv();
 
                 poly.unkTransform = poly.getDefaultTransform();
                 poly.pointPolygonIndex = -1;
@@ -183,11 +184,16 @@ public class LVL {
 
                 poly.index = ++polygonsCounter[0];
 
-                poly.calculateScaleUV();
-
                 poly.geometryPolyGroup = geometryPolygon.getSmoothingGroup();
                 poly.maxEdgeLength = geometryPolygon.getMaxEdgeLength();
                 poly.maxAngle = geometryPolygon.getMaxAngle();
+
+                if (lightmapTgaList.stream().noneMatch(tga -> tga.getLightmapId() == geometryPolygon.getLightmap().getId())) {
+                    lightmapTgaList.add(TgaParser.parse(geometryPolygon.getLightmap().getId(), geometryPolygon.getLightmap().getData()));
+                }
+
+                poly.lightmapTga = lightmapTgaList.stream().filter(tga -> tga.getLightmapId() == geometryPolygon.getLightmap().getId()).findFirst().orElseThrow(null);
+                poly.lightmapUV = geometry.getLightmapUv();
 
                 lvlPolygons.add(poly);
             });
@@ -300,7 +306,6 @@ public class LVL {
 
                         geometries1.forEach(geometry -> {
                             List<Vertex> vertices = geometry.getVertices();
-                            VertexUV sizeUV = geometry.getUvSize();
 
                             Polygon geometryPolygon = ldbDynamicMesh.getPolygons().getById(geometry.getPolygonId());
                             Vertex normal = geometryPolygon.getNormal();
@@ -332,8 +337,7 @@ public class LVL {
                             poly.unkVertex2 = geometry.getFirstVertex();
                             poly.unkVector1 = poly.getDefaultUnk5();
 
-                            poly.sizeUV = new double[]{sizeUV.getU(), sizeUV.getV()};
-                            poly.UV = geometry.getUv().stream().map(Vector3D::new).collect(Collectors.toList());
+                            poly.UV = geometry.getUv();
 
                             poly.unkTransform = poly.getDefaultTransform();
                             poly.pointPolygonIndex = -1;
@@ -343,8 +347,6 @@ public class LVL {
                                     .collect(Collectors.toList());
 
                             poly.index = ++polygonsCounter[0];
-
-                            poly.calculateScaleUV();
 
                             poly.geometryPolyGroup = geometryPolygon.getSmoothingGroup();
                             poly.maxEdgeLength = geometryPolygon.getMaxEdgeLength();
@@ -826,15 +828,7 @@ public class LVL {
 
                 data.addAll(toBytes(0));
 
-                // color RGBA
-                byte rgba = "laser".equalsIgnoreCase(polygon.getMaterialName())
-                        || "lights".equalsIgnoreCase(polygon.getMaterialName()) // todo feature flag
-                        ? (byte) 255
-                        : 0;
-                data.add(rgba);
-                data.add(rgba);
-                data.add(rgba);
-                data.add(rgba);
+                data.addAll(toBytes(polygon.getColor().getBytes()));
 
                 data.addAll(toBytes(polygon.lightIntensity));
                 data.addAll(toBytes(polygon.lightmapResolution));

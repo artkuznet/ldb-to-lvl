@@ -2,6 +2,8 @@ package com.artkuznet.converter.maxed;
 
 import com.artkuznet.converter.Vector3D;
 import com.artkuznet.converter.ldb.vertex.VertexUV;
+import com.artkuznet.converter.util.PixelColorExtractor;
+import com.artkuznet.converter.util.TgaParser;
 import com.artkuznet.converter.util.Triangulator;
 import com.artkuznet.converter.util.VectorCalculator;
 
@@ -72,6 +74,23 @@ public class LvlPolygon {
         public Vector3D uvNormal;
     }
 
+    public static class Color {
+        private byte r;
+        private byte g;
+        private byte b;
+        private byte a = (byte) 255;
+
+        public Color(int r, int g, int b) {
+            this.r = (byte) (r & 0xFF);
+            this.g = (byte) (g & 0xFF);
+            this.b = (byte) (b & 0xFF);
+        }
+
+        public byte[] getBytes() {
+            return new byte[]{r, g, b, a};
+        }
+    }
+
     public short index;
 
     public int geometryPolyGroup = 0;
@@ -82,6 +101,8 @@ public class LvlPolygon {
 
     public float maxEdgeLength = 0;
     public float maxAngle = 0;
+
+    private Color color = new Color(0, 0, 0);
 
     public short getIndex() {
         return index;
@@ -104,9 +125,11 @@ public class LvlPolygon {
     public Vector3D unkVertex1 = new Vector3D(0., 0., 0.);
     public Vector3D unkVertex2 = new Vector3D(0., 0., 0.);
 
-    public double[] sizeUV;
+    public List<VertexUV> UV;
 
-    public List<Vector3D> UV;
+    public List<VertexUV> lightmapUV;
+
+    public TgaParser.TgaImage lightmapTga;
 
     public Vector3D scaleU;
     public Vector3D scaleV;
@@ -335,12 +358,58 @@ public class LvlPolygon {
     }
 
     public void calculateScaleUV() {
-        Vector3D[] vectors = VectorCalculator.calculateUVVectors(
-                this.testVertices,
-                this.UV.stream().map(VertexUV::new).collect(Collectors.toList())
-        );
+        Vector3D[] vectors = VectorCalculator.calculateUVVectors(this.testVertices, this.UV);
 
         this.scaleU = vectors[0];
         this.scaleV = vectors[1];
+    }
+
+    public void calculateColor() {
+        if (this.materialName.equalsIgnoreCase("laser")) {
+            this.color = new Color(255, 255, 255);
+            return;
+        }
+
+        if (lightmapTga == null || lightmapUV == null) {
+            return;
+        }
+
+        List<Integer> colors = PixelColorExtractor.getPixelsInUVArea(lightmapTga, lightmapUV);
+
+        if (colors.isEmpty()) {
+            return;
+        }
+
+        int limit = 180;
+
+        Set<int[]> rgb = colors.stream()
+                .map(c -> new int[]{
+                        (c >> 16) & 0xFF,
+                        (c >> 8) & 0xFF,
+                        c & 0xFF,
+                }).filter(c -> c[0] > limit && c[1] > limit && c[2] > limit)
+                .collect(Collectors.toSet());
+
+        if (rgb.isEmpty()) {
+            return;
+        }
+
+        int minR = rgb.stream().map(c -> c[0]).min(Integer::compareTo).orElseThrow(null);
+        int minG = rgb.stream().map(c -> c[1]).min(Integer::compareTo).orElseThrow(null);
+        int minB = rgb.stream().map(c -> c[2]).min(Integer::compareTo).orElseThrow(null);
+
+        int maxR = rgb.stream().map(c -> c[0]).max(Integer::compareTo).orElseThrow(null);
+        int maxG = rgb.stream().map(c -> c[1]).max(Integer::compareTo).orElseThrow(null);
+        int maxB = rgb.stream().map(c -> c[2]).max(Integer::compareTo).orElseThrow(null);
+
+        int delta = 2;
+
+        if (maxR - minR <= delta && maxG - minG <= delta && maxB - minB <= delta) {
+            this.color = new Color((maxR + minR) / 2, (maxG + minG) / 2, (maxB + minB) / 2);
+        }
+    }
+
+    public Color getColor() {
+        return color;
     }
 }

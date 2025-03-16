@@ -11,6 +11,10 @@ public class LightmapTexture {
         this.data = data;
     }
 
+    public byte[] getData() {
+        return data;
+    }
+
     public String getFileTypeName() {
         switch (fileType) {
             case 0:
