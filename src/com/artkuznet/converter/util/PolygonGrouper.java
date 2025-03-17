@@ -2,6 +2,7 @@ package com.artkuznet.converter.util;
 
 import com.artkuznet.converter.Vector3D;
 import com.artkuznet.converter.ldb.vertex.VertexUV;
+import com.artkuznet.converter.maxed.LvlPolygon;
 import com.artkuznet.converter.maxed.LvlPolygon.VertexEdge;
 import com.artkuznet.converter.maxed.LvlPolygon.VertexPolygon;
 
@@ -14,13 +15,38 @@ public class PolygonGrouper {
 
     public static List<List<VertexPolygon>> groupPolygons(List<VertexPolygon> vertexPolygons) {
         return vertexPolygons.stream()
-                .collect(Collectors.groupingBy(p -> new GroupKey(p.materialName, p.bitmapName, p.normal)))
+                .collect(Collectors.groupingBy(p -> new GroupKey(p.materialName, p.bitmapName, p.normal, p.uvNormal)))
                 .values().stream()
                 .flatMap(group -> {
                     Map<VertexPolygon, List<VertexPolygon>> adjacency = buildAdjacency(group);
                     return findConnectedComponents(group, adjacency).stream();
                 })
+                .map(PolygonGrouper::split)
+                .flatMap(List::stream)
                 .collect(Collectors.toList());
+    }
+
+    private static List<List<VertexPolygon>> split(List<VertexPolygon> vertexPolygons) {
+        List<List<VertexEdge>> contours = ContourFinder.findContours(vertexPolygons);
+
+        if (contours.size() == 1) {
+            Set<Vector3D> vertices = vertexPolygons.stream()
+                    .map(p -> p.edges)
+                    .flatMap(List::stream)
+                    .map(e -> e.v1)
+                    .collect(Collectors.toSet());
+
+            List<LvlPolygon.VertexEdge> edges = contours.stream()
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+
+            Set<Vector3D> vEdgesVerticesFrom = edges.stream().map(e -> e.v1).collect(Collectors.toSet());
+            if (vertices.stream().anyMatch(v -> !vEdgesVerticesFrom.contains(v))) {
+                return vertexPolygons.stream().map(Arrays::asList).collect(Collectors.toList());
+            }
+        }
+
+        return Collections.singletonList(vertexPolygons);
     }
 
     private static Map<VertexPolygon, List<VertexPolygon>> buildAdjacency(List<VertexPolygon> polygons) {
@@ -37,9 +63,7 @@ public class PolygonGrouper {
     }
 
     private static boolean haveSharedEdges(VertexPolygon a, VertexPolygon b) {
-        return a.edges.stream().anyMatch(edgeA ->
-                b.edges.stream().anyMatch(edgeB -> edgesMatch(edgeA, edgeB) && a.uvNormal.equals(b.uvNormal))
-        );
+        return a.edges.stream().anyMatch(edgeA -> b.edges.stream().anyMatch(edgeB -> edgesMatch(edgeA, edgeB)));
     }
 
     private static List<List<VertexPolygon>> findConnectedComponents(
@@ -93,14 +117,20 @@ public class PolygonGrouper {
         final String materialName;
         final String bitmapName;
         final Vector3D normal;
+        final Vector3D uvNormal;
 
-        GroupKey(String materialName, String bitmapName, Vector3D normal) {
+        GroupKey(String materialName, String bitmapName, Vector3D normal, Vector3D uvNormal) {
             this.materialName = materialName;
             this.bitmapName = bitmapName;
             this.normal = new Vector3D(
                     round(normal.getX()),
                     round(normal.getY()),
                     round(normal.getZ())
+            );
+            this.uvNormal = new Vector3D(
+                    round(uvNormal.getX()),
+                    round(uvNormal.getY()),
+                    round(uvNormal.getZ())
             );
         }
 
@@ -115,13 +145,15 @@ public class PolygonGrouper {
             GroupKey groupKey = (GroupKey) o;
             return Objects.equals(materialName, groupKey.materialName) &&
                     Objects.equals(bitmapName, groupKey.bitmapName) &&
-                    vectorsEqual(normal, groupKey.normal);
+                    vectorsEqual(normal, groupKey.normal) &&
+                    vectorsEqual(uvNormal, groupKey.uvNormal);
         }
 
         @Override
         public int hashCode() {
             return Objects.hash(materialName, bitmapName,
-                    round(normal.getX()), round(normal.getY()), round(normal.getZ()));
+                    round(normal.getX()), round(normal.getY()), round(normal.getZ()),
+                    round(uvNormal.getX()), round(uvNormal.getY()), round(uvNormal.getZ()));
         }
     }
 }

@@ -26,11 +26,15 @@ public class Triangulator {
         boolean isCCW = isCCW(projected);
 
         List<Integer> activeIndices = new ArrayList<>();
-        for (int i = 0; i < polygon.size(); i++) activeIndices.add(i);
+        for (int i = 0; i < polygon.size(); i++) {
+            activeIndices.add(i);
+        }
 
         while (activeIndices.size() > 3) {
             int earIndex = findEarIndex(activeIndices, projected, isCCW);
-            if (earIndex == -1) throw new RuntimeException("Triangulation failed");
+            if (earIndex == -1) {
+                throw new RuntimeException("Triangulation failed");
+            }
 
             int prevIdx = activeIndices.get((earIndex - 1 + activeIndices.size()) % activeIndices.size());
             int currentIdx = activeIndices.get(earIndex);
@@ -55,9 +59,15 @@ public class Triangulator {
         List<Point2D> projected = new ArrayList<>();
         for (Vector3D v : polygon) {
             switch (plane) {
-                case 0: projected.add(new Point2D(v.getY(), v.getZ())); break;
-                case 1: projected.add(new Point2D(v.getX(), v.getZ())); break;
-                case 2: projected.add(new Point2D(v.getX(), v.getY())); break;
+                case 0:
+                    projected.add(new Point2D(v.getY(), v.getZ()));
+                    break;
+                case 1:
+                    projected.add(new Point2D(v.getX(), v.getZ()));
+                    break;
+                case 2:
+                    projected.add(new Point2D(v.getX(), v.getY()));
+                    break;
             }
         }
         return projected;
@@ -67,7 +77,7 @@ public class Triangulator {
         double area = 0;
         int n = polygon.size();
         for (int i = 0; i < n; i++) {
-            Point2D curr = polygon.get(i), next = polygon.get((i+1)%n);
+            Point2D curr = polygon.get(i), next = polygon.get((i + 1) % n);
             area += curr.x * next.y - next.x * curr.y;
         }
         return area > 0;
@@ -76,12 +86,12 @@ public class Triangulator {
     private static int findEarIndex(List<Integer> indices, List<Point2D> projected, boolean isCCW) {
         int n = indices.size();
         for (int i = 0; i < n; i++) {
-            int prevIdx = indices.get((i-1+n)%n);
+            int prevIdx = indices.get((i - 1 + n) % n);
             int currIdx = indices.get(i);
-            int nextIdx = indices.get((i+1)%n);
+            int nextIdx = indices.get((i + 1) % n);
             Point2D a = projected.get(prevIdx), b = projected.get(currIdx), c = projected.get(nextIdx);
 
-            double cross = (b.x - a.x)*(c.y - b.y) - (b.y - a.y)*(c.x - b.x);
+            double cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
             boolean convex = (isCCW && cross > 0) || (!isCCW && cross < 0);
             if (!convex) continue;
 
@@ -101,9 +111,9 @@ public class Triangulator {
     }
 
     private static boolean isPointInside(Point2D a, Point2D b, Point2D c, Point2D p) {
-        double cross1 = (b.x - a.x)*(p.y - a.y) - (b.y - a.y)*(p.x - a.x);
-        double cross2 = (c.x - b.x)*(p.y - b.y) - (c.y - b.y)*(p.x - b.x);
-        double cross3 = (a.x - c.x)*(p.y - c.y) - (a.y - c.y)*(p.x - c.x);
+        double cross1 = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+        double cross2 = (c.x - b.x) * (p.y - b.y) - (c.y - b.y) * (p.x - b.x);
+        double cross3 = (a.x - c.x) * (p.y - c.y) - (a.y - c.y) * (p.x - c.x);
         return !((cross1 < 0 || cross2 < 0 || cross3 < 0) && (cross1 > 0 || cross2 > 0 || cross3 > 0));
     }
 

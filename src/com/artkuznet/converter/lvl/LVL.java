@@ -5,7 +5,6 @@ import com.artkuznet.converter.ldb.MaxLDB;
 import com.artkuznet.converter.ldb.character.Character;
 import com.artkuznet.converter.ldb.dynamicmesh.LdbDynamicMesh;
 import com.artkuznet.converter.ldb.fsm.LdbFSM;
-import com.artkuznet.converter.ldb.lightmap.LightmapTexture;
 import com.artkuznet.converter.ldb.material.Material;
 import com.artkuznet.converter.ldb.polygon.Geometry;
 import com.artkuznet.converter.ldb.polygon.Polygon;
@@ -171,16 +170,13 @@ public class LVL {
                 );
 
                 poly.textureOffset = geometry.getTextureOffset();
-                poly.unkVertex1 = geometry.getFirstVertex();
-                poly.unkVertex2 = geometry.getFirstVertex();
+                poly.setUnkVertex(geometry.getFirstVertex());
                 poly.unkVector1 = poly.getDefaultUnk5();
 
                 poly.UV = geometry.getUv();
 
                 poly.unkTransform = poly.getDefaultTransform();
                 poly.pointPolygonIndex = -1;
-
-                poly.testVertices = vertices.stream().map(v -> new Vector3D(v.getX(), v.getY(), v.getZ())).collect(Collectors.toList());
 
                 poly.index = ++polygonsCounter[0];
 
@@ -225,8 +221,7 @@ public class LVL {
                 Vector3D normal = new Vector3D(exit.getNormal().getX(), exit.getNormal().getY(), exit.getNormal().getZ());
                 LvlExit lvlExit = new LvlExit(edges, exit.getShortName(), normal, exit.getExitName(), exit.getParentRoomName());
 
-                lvlExit.unkVertex1 = new Vector3D(vertices.get(0).getX(), vertices.get(0).getY(), vertices.get(0).getZ());
-                lvlExit.unkVertex2 = new Vector3D(vertices.get(0).getX(), vertices.get(0).getY(), vertices.get(0).getZ());
+                lvlExit.setUnkVertex(new Vector3D(vertices.get(0).getX(), vertices.get(0).getY(), vertices.get(0).getZ()));
 
                 lvlExit.unkVector1 = lvlExit.getDefaultUnk5();
 
@@ -234,15 +229,11 @@ public class LVL {
 
                 lvlExit.unkTransform = lvlExit.getDefaultTransform();
 
-                lvlExit.testVertices = vertices.stream()
-                        .map(v -> new Vector3D(v.getX(), v.getY(), v.getZ()))
-                        .collect(Collectors.toList());
-
                 lvlExit.index = ++polygonsCounter[0];
 
                 Vector3D[] defaultScaleUV = lvlExit.getDefaultScaleUV();
-                lvlExit.scaleU = defaultScaleUV[0];
-                lvlExit.scaleV = defaultScaleUV[1];
+                lvlExit.setScaleU(defaultScaleUV[0]);
+                lvlExit.setScaleV(defaultScaleUV[1]);
 
                 lvlPolygons.add(lvlExit);
             });
@@ -333,18 +324,13 @@ public class LVL {
                             );
 
                             poly.textureOffset = geometry.getTextureOffset();
-                            poly.unkVertex1 = geometry.getFirstVertex();
-                            poly.unkVertex2 = geometry.getFirstVertex();
+                            poly.setUnkVertex(geometry.getFirstVertex());
                             poly.unkVector1 = poly.getDefaultUnk5();
 
                             poly.UV = geometry.getUv();
 
                             poly.unkTransform = poly.getDefaultTransform();
                             poly.pointPolygonIndex = -1;
-
-                            poly.testVertices = vertices.stream()
-                                    .map(v -> new Vector3D(v.getX(), v.getY(), v.getZ()))
-                                    .collect(Collectors.toList());
 
                             poly.index = ++polygonsCounter[0];
 
@@ -814,17 +800,17 @@ public class LVL {
 
                 data.addAll(transformPolygonToBytes(polygon.getDefaultTransform()));
 
-                data.addAll(toBytes(polygon.unkVertex1));
+                data.addAll(toBytes(polygon.getUnkVertex()));
 
-                data.addAll(toBytes(polygon.scaleU));
-                data.addAll(toBytes(polygon.scaleV));
+                data.addAll(toBytes(polygon.getScaleU()));
+                data.addAll(toBytes(polygon.getScaleV()));
 
                 data.addAll(toBytes(polygon.normal));
 
                 data.addAll(toBytes(polygon.textureOffset[0]));
                 data.addAll(toBytes(polygon.textureOffset[1]));
 
-                data.addAll(toBytes(polygon.unkVertex2));
+                data.addAll(toBytes(polygon.getUnkVertex()));
 
                 data.addAll(toBytes(0));
 

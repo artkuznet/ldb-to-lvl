@@ -72,6 +72,23 @@ public class LvlPolygon {
         public String bitmapName;
         public Vector3D normal;
         public Vector3D uvNormal;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            VertexPolygon that = (VertexPolygon) o;
+            return edges.equals(that.edges)
+                    && materialName.equals(that.materialName)
+                    && bitmapName.equals(that.bitmapName)
+                    && normal.equals(that.normal)
+                    && uvNormal.equals(that.uvNormal);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(edges, materialName, bitmapName, normal, uvNormal);
+        }
     }
 
     public static class Color {
@@ -112,8 +129,6 @@ public class LvlPolygon {
 
     public boolean grouped = false;
 
-    public List<Vector3D> testVertices;
-
     private Edge[] edges;
     private String materialName;
     private String bitmapName;
@@ -122,8 +137,6 @@ public class LvlPolygon {
 
     public Vector3D unkVector1;
     public double[][] unkTransform;
-    public Vector3D unkVertex1 = new Vector3D(0., 0., 0.);
-    public Vector3D unkVertex2 = new Vector3D(0., 0., 0.);
 
     public List<VertexUV> UV;
 
@@ -131,9 +144,33 @@ public class LvlPolygon {
 
     public TgaParser.TgaImage lightmapTga;
 
-    public Vector3D scaleU;
-    public Vector3D scaleV;
+    private Vector3D scaleU;
 
+    public Vector3D getScaleU() {
+        if (this.scaleU == null || this.scaleV == null) {
+            calculateScaleUV();
+        }
+        return scaleU;
+    }
+
+    private Vector3D scaleV;
+
+    public Vector3D getScaleV() {
+        if (this.scaleU == null || this.scaleV == null) {
+            calculateScaleUV();
+        }
+        return scaleV;
+    }
+
+    public void setScaleU(Vector3D scaleU) {
+        this.scaleU = scaleU;
+    }
+
+    public void setScaleV(Vector3D scaleV) {
+        this.scaleV = scaleV;
+    }
+
+    // todo vertexUV ?
     public double[] textureOffset;
 
     public double lightIntensity = 1.0;
@@ -147,6 +184,16 @@ public class LvlPolygon {
     }
 
     public List<Triangle> triangles;
+
+    private Vector3D unkVertex;
+
+    public void setUnkVertex(Vector3D unkVertex) {
+        this.unkVertex = unkVertex;
+    }
+
+    public Vector3D getUnkVertex() {
+        return unkVertex;
+    }
 
     public Mesh parentMesh;
 
@@ -312,20 +359,22 @@ public class LvlPolygon {
     }
 
     public List<Triangle> getDefaultTriangles() {
-        if (triangles != null) {
-            return triangles;
-        }
+        return getDefaultTriangles(false);
+    }
 
-        if (this.edges.length <= 4 || !(this instanceof LvlExit)) {
-            Triangle t = new Triangle();
-            t.normal = normal.clone();
-            t.vertices = new ArrayList<>();
+    public List<Triangle> getDefaultTriangles(boolean forceTriangulate) {
+        if (!forceTriangulate) {
+            if (this.edges.length <= 4 || !(this instanceof LvlExit)) {
+                Triangle t = new Triangle();
+                t.normal = normal.clone();
+                t.vertices = new ArrayList<>();
 
-            for (Edge edge : edges) {
-                t.vertices.add(edge.getTo());
+                for (Edge edge : edges) {
+                    t.vertices.add(edge.getTo());
+                }
+
+                return Collections.singletonList(t);
             }
-
-            return Collections.singletonList(t);
         }
 
         List<Vector3D> vertsCopy = Arrays.stream(this.parentMesh.getVertices()).collect(Collectors.toList());
@@ -358,7 +407,24 @@ public class LvlPolygon {
     }
 
     public void calculateScaleUV() {
-        Vector3D[] vectors = VectorCalculator.calculateUVVectors(this.testVertices, this.UV);
+        List<Vector3D> meshVertices = Arrays.asList(parentMesh.getVertices());
+
+        List<Vector3D> polygonVertices = Arrays.stream(this.edges)
+                .map(Edge::getFrom)
+                .map(meshVertices::get)
+                .collect(Collectors.toList());
+
+        List<Vector3D> triangleVertices = Vector3D.findTriangle(polygonVertices);
+
+        if (triangleVertices.size() < 3) {
+            throw new RuntimeException();
+        }
+
+        List<Integer> triangleVertexIndices = triangleVertices.stream().map(polygonVertices::indexOf).collect(Collectors.toList());
+
+        List<VertexUV> uvList = triangleVertexIndices.stream().map(UV::get).collect(Collectors.toList());
+
+        Vector3D[] vectors = VectorCalculator.calculateUVVectors(triangleVertices, uvList);
 
         this.scaleU = vectors[0];
         this.scaleV = vectors[1];
@@ -380,14 +446,14 @@ public class LvlPolygon {
             return;
         }
 
-        int limit = 180;
+        int limit = 200;
 
         Set<int[]> rgb = colors.stream()
                 .map(c -> new int[]{
                         (c >> 16) & 0xFF,
                         (c >> 8) & 0xFF,
                         c & 0xFF,
-                }).filter(c -> c[0] > limit && c[1] > limit && c[2] > limit)
+                }).filter(c -> c[0] >= limit && c[1] >= limit && c[2] >= limit)
                 .collect(Collectors.toSet());
 
         if (rgb.isEmpty()) {
@@ -405,11 +471,15 @@ public class LvlPolygon {
         int delta = 2;
 
         if (maxR - minR <= delta && maxG - minG <= delta && maxB - minB <= delta) {
-            this.color = new Color((maxR + minR) / 2, (maxG + minG) / 2, (maxB + minB) / 2);
+            this.color = new Color(255, 255, 255);
         }
     }
 
     public Color getColor() {
+        if (color == null) {
+            calculateColor();
+        }
+
         return color;
     }
 }

@@ -2,7 +2,6 @@ package com.artkuznet.converter.maxed;
 
 import com.artkuznet.converter.Options;
 import com.artkuznet.converter.Vector3D;
-import com.artkuznet.converter.ldb.vertex.VertexUV;
 import com.artkuznet.converter.util.ContourFinder;
 import com.artkuznet.converter.util.PolygonGrouper;
 import com.artkuznet.converter.util.PolygonProcessor;
@@ -121,8 +120,13 @@ public class Mesh extends MaxObject {
                     vPolygon.index = lvlPolygon.index;
                     vPolygon.materialName = lvlPolygon.getMaterialName();
                     vPolygon.bitmapName = lvlPolygon.getBitmapName();
-                    vPolygon.normal = lvlPolygon.normal.clone();
-                    vPolygon.uvNormal = Vector3D.calculateNormal(Vector3D.findTriangle(lvlPolygon.UV.stream().map(Vector3D::new).collect(Collectors.toList()))).softSmooth();
+                    vPolygon.normal = lvlPolygon.normal.clone().softSmooth();
+                    vPolygon.uvNormal = Vector3D.calculateNormal(
+                            Vector3D.findTriangle(lvlPolygon.UV.stream()
+                                    .map(Vector3D::new)
+                                    .collect(Collectors.toList())
+                            )
+                    ).softSmooth();
 
                     vPolygon.edges = new ArrayList<>();
 
@@ -141,8 +145,10 @@ public class Mesh extends MaxObject {
                     }
 
                     return vPolygon;
-                }).collect(Collectors.toList());
-
+                })
+                .distinct()
+                .map(PolygonProcessor::fixClockwise)
+                .collect(Collectors.toList());
 
         List<List<LvlPolygon.VertexPolygon>> vGroups = PolygonGrouper.groupPolygons(vertexPolygons).stream()
                 .map(PolygonProcessor::processPolygons)
@@ -155,19 +161,18 @@ public class Mesh extends MaxObject {
 
         List<LvlPolygon> joinedPolygons = vGroups.stream().map(vPolygons -> {
 
-            LvlPolygon p1 = lvlPolygonList.stream().filter(p -> p.index == vPolygons.get(0).index).findFirst().orElseThrow(null);
+            List<List<LvlPolygon.VertexEdge>> edgeContours = ContourFinder.findContours(vPolygons);
+
+            List<LvlPolygon.VertexEdge> vEdges = edgeContours.stream()
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+
+            LvlPolygon p1 = lvlPolygonList.stream()
+                    .filter(p -> p.index == vPolygons.get(0).index)
+                    .findAny()
+                    .orElseThrow(null);
 
             List<Short> groupedIndices = vPolygons.stream().map(vp -> vp.index).collect(Collectors.toList());
-
-            List<LvlPolygon.Triangle> allTriangles = lvlPolygonList.stream().filter(p -> groupedIndices.contains(p.index))
-                    .map(LvlPolygon::getTriangles)
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
-
-
-            List<LvlPolygon.VertexEdge> vEdges = ContourFinder.findContours(vPolygons).stream()
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
 
             p1.setEdges(vEdges.stream()
                     .map(vertexEdge ->
@@ -176,7 +181,16 @@ public class Mesh extends MaxObject {
                     .toArray(LvlPolygon.Edge[]::new)
             );
 
-            p1.setTriangles(allTriangles);
+            p1.UV = vEdges.stream().map(vertexEdge -> vertexEdge.uv1).collect(Collectors.toList());
+            // todo p1.lightmapUV
+
+            p1.setTriangles(
+                    lvlPolygonList.stream()
+                            .filter(p -> groupedIndices.contains(p.index))
+                            .map(LvlPolygon::getTriangles)
+                            .flatMap(List::stream)
+                            .collect(Collectors.toList())
+            );
 
             p1.calculateScaleUV();
             p1.calculateColor();
