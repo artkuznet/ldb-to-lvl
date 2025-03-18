@@ -161,18 +161,12 @@ public class LvlPolygon {
     private Vector3D scaleU;
 
     public Vector3D getScaleU() {
-        if (this.scaleU == null || this.scaleV == null) {
-            calculateScaleUV();
-        }
         return scaleU;
     }
 
     private Vector3D scaleV;
 
     public Vector3D getScaleV() {
-        if (this.scaleU == null || this.scaleV == null) {
-            calculateScaleUV();
-        }
         return scaleV;
     }
 
@@ -420,9 +414,7 @@ public class LvlPolygon {
         );
     }
 
-    public void calculateScaleUV() {
-        List<Vector3D> meshVertices = Arrays.asList(parentMesh.getVertices());
-
+    public void calculateTextureSpace(List<Vector3D> meshVertices) {
         List<Vector3D> polygonVertices = Arrays.stream(this.edges)
                 .map(Edge::getFrom)
                 .map(meshVertices::get)

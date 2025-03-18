@@ -192,6 +192,8 @@ public class LVL {
                 poly.lightmapTga = lightmapTgaList.stream().filter(tga -> tga.getLightmapId() == geometryPolygon.getLightmap().getId()).findFirst().orElseThrow(null);
                 poly.lightmapUV = geometry.getLightmapUv();
 
+                poly.calculateTextureSpace(lvlVertexList);
+
                 lvlPolygons.add(poly);
             });
 
@@ -291,11 +293,10 @@ public class LVL {
                                 .mapToObj(ldbDynamicMesh::constructPolygon)
                                 .collect(Collectors.toCollection(ArrayList::new));
 
-                        List<Vector3D> lvlVertexList1 = new ArrayList<>();
                         geometries1.forEach(geometry -> geometry.getVertices().forEach(vertex -> {
                             Vector3D point3d = new Vector3D(vertex.getX(), vertex.getY(), vertex.getZ());
-                            if (!lvlVertexList1.contains(point3d)) {
-                                lvlVertexList1.add(point3d);
+                            if (!lvlVertexList.contains(point3d)) {
+                                lvlVertexList.add(point3d);
                             }
                         }));
 
@@ -311,11 +312,11 @@ public class LVL {
                             for (int i = 0; i < edges.length - 1; i++) {
                                 Vertex vFrom = vertices.get(i);
                                 Vector3D p3dFrom = new Vector3D(vFrom.getX(), vFrom.getY(), vFrom.getZ());
-                                int vertexIndexFrom = lvlVertexList1.indexOf(p3dFrom);
+                                int vertexIndexFrom = lvlVertexList.indexOf(p3dFrom);
 
                                 Vertex vTo = vertices.get(i + 1);
                                 Vector3D p3dTo = new Vector3D(vTo.getX(), vTo.getY(), vTo.getZ());
-                                int vertexIndexTo = lvlVertexList1.indexOf(p3dTo);
+                                int vertexIndexTo = lvlVertexList.indexOf(p3dTo);
 
                                 edges[i] = new LvlPolygon.Edge(vertexIndexFrom, vertexIndexTo);
                             }
@@ -344,6 +345,8 @@ public class LVL {
                             poly.maxEdgeLength = geometryPolygon.getMaxEdgeLength();
                             poly.maxAngle = geometryPolygon.getMaxAngle();
 
+                            poly.calculateTextureSpace(lvlVertexList);
+
                             dynamicPolygons.add(poly);
                         });
 
@@ -368,7 +371,7 @@ public class LVL {
 
                         dynamic.setFlipFaces(false);
 
-                        dynamic.setVertices(lvlVertexList1.toArray(new Vector3D[0]));
+                        dynamic.setVertices(lvlVertexList.toArray(new Vector3D[0]));
                         dynamic.setPolygons(dynamicPolygons.toArray(new LvlPolygon[0]));
                         dynamic.setTransform(ldbDynamicMesh.getTransformDouble());
 

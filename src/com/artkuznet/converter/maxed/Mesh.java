@@ -192,8 +192,6 @@ public class Mesh extends MaxObject {
                             .collect(Collectors.toList())
             );
 
-            p1.calculateScaleUV();
-
             return p1;
         }).collect(Collectors.toList());
 
