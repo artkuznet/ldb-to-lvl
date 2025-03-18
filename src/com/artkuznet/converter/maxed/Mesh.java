@@ -120,7 +120,7 @@ public class Mesh extends MaxObject {
                     vPolygon.index = lvlPolygon.index;
                     vPolygon.materialName = lvlPolygon.getMaterialName();
                     vPolygon.bitmapName = lvlPolygon.getBitmapName();
-                    vPolygon.normal = lvlPolygon.normal.clone().softSmooth();
+                    vPolygon.normal = lvlPolygon.getNormal().clone().softSmooth();
                     vPolygon.uvNormal = Vector3D.calculateNormal(
                             Vector3D.findTriangle(lvlPolygon.UV.stream()
                                     .map(Vector3D::new)
@@ -193,7 +193,6 @@ public class Mesh extends MaxObject {
             );
 
             p1.calculateScaleUV();
-            p1.calculateColor();
 
             return p1;
         }).collect(Collectors.toList());

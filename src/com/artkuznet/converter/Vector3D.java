@@ -2,9 +2,9 @@ package com.artkuznet.converter;
 
 import com.artkuznet.converter.ldb.vertex.VertexUV;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class Vector3D {
@@ -159,45 +159,17 @@ public class Vector3D {
 
     @Override
     public int hashCode() {
-        final long prime = 31;
-        long result = 1;
-
-        result = prime * result + Double.doubleToLongBits(x);
-        result = prime * result + Double.doubleToLongBits(y);
-        result = prime * result + Double.doubleToLongBits(z);
-
-        return (int) result;
+        return Objects.hash(Math.round(x * 1e6), Math.round(y * 1e6), Math.round(z * 1e6));
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-
-        if (obj == null) {
-            return false;
-        }
-
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-
-        Vector3D other = (Vector3D) obj;
-
-        if (Double.doubleToLongBits(x) != Double.doubleToLongBits(other.x)) {
-            return false;
-        }
-
-        if (Double.doubleToLongBits(y) != Double.doubleToLongBits(other.y)) {
-            return false;
-        }
-
-        if (Double.doubleToLongBits(z) != Double.doubleToLongBits(other.z)) {
-            return false;
-        }
-
-        return true;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Vector3D that = (Vector3D) o;
+        return Math.abs(that.x - x) < 1e-6 &&
+                Math.abs(that.y - y) < 1e-6 &&
+                Math.abs(that.z - z) < 1e-6;
     }
 
     public Vector3D rotate(double[][] rotateMatrix) {

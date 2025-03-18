@@ -12,8 +12,18 @@ import java.util.stream.Collectors;
 
 public class LvlPolygon {
 
+    private double area;
+
     public void setEdges(Edge[] edges) {
         this.edges = edges;
+    }
+
+    public double getArea() {
+        return area;
+    }
+
+    public void setArea(double area) {
+        this.area = area;
     }
 
     public static class VertexEdge {
@@ -133,7 +143,11 @@ public class LvlPolygon {
     private String materialName;
     private String bitmapName;
 
-    public Vector3D normal;
+    private Vector3D normal;
+
+    public Vector3D getNormal() {
+        return normal;
+    }
 
     public Vector3D unkVector1;
     public double[][] unkTransform;
@@ -436,7 +450,7 @@ public class LvlPolygon {
             return;
         }
 
-        if (lightmapTga == null || lightmapUV == null) {
+        if (lightmapTga == null || lightmapUV == null || true) { // todo feature flag
             return;
         }
 

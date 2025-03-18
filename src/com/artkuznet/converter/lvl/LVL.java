@@ -13,6 +13,7 @@ import com.artkuznet.converter.ldb.vertex.Vertex;
 import com.artkuznet.converter.mapper.DynamicDataMapper;
 import com.artkuznet.converter.mapper.FsmDataMapper;
 import com.artkuznet.converter.maxed.*;
+import com.artkuznet.converter.util.MeshBuilder;
 import com.artkuznet.converter.util.TgaParser;
 
 import java.util.*;
@@ -243,22 +244,27 @@ public class LVL {
             System.out.println("Room: " + roomName);
 
 
-            List<List<LvlPolygon>> groups = MeshBuilder.groupPolygons(lvlPolygons, lvlVertexList, true, roomName);
+            List<List<LvlPolygon>> groups = MeshBuilder.groupPolygons(lvlPolygons, lvlVertexList);
 
 
-            List<List<LvlPolygon>> rooommm = groups.stream()
+            List<LvlPolygon> largestMesh = groups.stream()
+                    .max(Comparator.comparingDouble(o -> o.stream()
+                            .map(LvlPolygon::getArea)
+                            .reduce(Double::sum)
+                            .orElseThrow(null))
+                    )
+                    .orElseThrow(null);
+
+            List<List<LvlPolygon>> exitMeshes = groups.stream()
                     .filter(polygons -> polygons.stream().anyMatch(p -> p instanceof LvlExit))
                     .collect(Collectors.toList());
-            Set<LvlPolygon> emptyRoom = new HashSet<>();
-            rooommm.forEach(emptyRoom::addAll);
 
+            Set<LvlPolygon> emptyRoom = new HashSet<>(largestMesh);
+            exitMeshes.forEach(emptyRoom::addAll);
 
             List<List<LvlPolygon>> meshes = groups.stream()
-                    .filter(polygons -> polygons.stream().noneMatch(p -> p instanceof LvlExit))
+                    .filter(polygons -> polygons.stream().noneMatch(emptyRoom::contains))
                     .collect(Collectors.toList());
-
-            meshes = new ArrayList<>(MeshBuilder.groupPolygons(meshes.stream().flatMap(List::stream).collect(Collectors.toList()), lvlVertexList, false, roomName));
-
 
             List<MaxObject> childs = new ArrayList<>();
 
@@ -794,7 +800,7 @@ public class LVL {
             for (LvlPolygon polygon : ((Mesh) object).getPolygons()) {
                 data.addAll(toBytes(polygon.getEdges().length));
 
-                data.addAll(toBytes(polygon.normal));
+                data.addAll(toBytes(polygon.getNormal()));
 
                 data.addAll(toBytes(polygon.unkVector1));
 
@@ -805,7 +811,7 @@ public class LVL {
                 data.addAll(toBytes(polygon.getScaleU()));
                 data.addAll(toBytes(polygon.getScaleV()));
 
-                data.addAll(toBytes(polygon.normal));
+                data.addAll(toBytes(polygon.getNormal()));
 
                 data.addAll(toBytes(polygon.textureOffset[0]));
                 data.addAll(toBytes(polygon.textureOffset[1]));
