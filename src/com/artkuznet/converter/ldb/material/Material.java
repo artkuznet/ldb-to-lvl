@@ -61,4 +61,8 @@ public class Material {
         properties.setHasAlphaTest(hasAlphaTest);
         properties.setHasAdultContent(hasAdultContent);
     }
+
+    public MaterialProperties getProperties() {
+        return properties;
+    }
 }

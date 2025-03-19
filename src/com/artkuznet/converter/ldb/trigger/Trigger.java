@@ -45,8 +45,8 @@ public class Trigger {
         String name = sharedName.substring(sharedName.lastIndexOf("::") + 2);
         name = name.substring(0, name.length() - 8);
 
-        if (name.length() > 255) {
-            throw new RuntimeException();
+        if (name.length() > Byte.MAX_VALUE) {
+            throw new RuntimeException(name);
         }
 
         return name;

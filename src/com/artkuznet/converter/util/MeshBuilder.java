@@ -36,7 +36,7 @@ public class MeshBuilder {
                 boolean isCollinearOpposite = areNormalsCollinearAndOpposite(p1.getNormal(), p2.getNormal());
                 boolean bothDummy = "dummy".equalsIgnoreCase(p1.getMaterialName()) && "dummy".equalsIgnoreCase(p2.getMaterialName());
 
-                if (!(isCollinearOpposite && bothDummy)) {
+                if (!(isCollinearOpposite && bothDummy) && validMaterials(p1, p2)) {
                     Integer idx1 = polygonIndices.get(p1);
                     Integer idx2 = polygonIndices.get(p2);
                     if (idx1 != null && idx2 != null) {
@@ -59,6 +59,19 @@ public class MeshBuilder {
         }
 
         return new ArrayList<>(groups.values());
+    }
+
+    private static boolean validMaterials(LvlPolygon p1, LvlPolygon p2) {
+        List<String> isolated = Arrays.asList("ai_node_collision_nodraw", "cameracollision", "charactercollision_nodraw");
+
+        String m1 = p1.getMaterialName().toLowerCase();
+        String m2 = p2.getMaterialName().toLowerCase();
+
+        if (m1.equals(m2)) {
+            return true;
+        }
+
+        return !isolated.contains(m1) && !isolated.contains(m2);
     }
 
     private static boolean areNormalsCollinearAndOpposite(Vector3D n1, Vector3D n2) {

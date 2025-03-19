@@ -193,10 +193,6 @@ public class FsmDataMapper {
             fsmMsg.params = mapParams(params);
         }
 
-        if (fsmMsg.message.length() > 255) {
-            throw new RuntimeException(fsmMsg.message);
-        }
-
         return fsmMsg;
     }
 

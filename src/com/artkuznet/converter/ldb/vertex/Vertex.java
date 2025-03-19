@@ -2,8 +2,10 @@ package com.artkuznet.converter.ldb.vertex;
 
 import com.artkuznet.converter.Vector3D;
 
+import java.util.Objects;
+
 public class Vertex {
-    
+
     private float x;
     private float y;
     private float z;
@@ -35,44 +37,16 @@ public class Vertex {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-
-        result = prime * result + Float.floatToIntBits(x);
-        result = prime * result + Float.floatToIntBits(y);
-        result = prime * result + Float.floatToIntBits(z);
-
-        return result;
+        return Objects.hash(Math.round(x * 1e6), Math.round(y * 1e6), Math.round(z * 1e6));
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) {
-            return true;
-        }
-
-        if (obj == null) {
-            return false;
-        }
-
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-
-        Vertex other = (Vertex) obj;
-
-        if (Float.floatToIntBits(x) != Float.floatToIntBits(other.x)) {
-            return false;
-        }
-
-        if (Float.floatToIntBits(y) != Float.floatToIntBits(other.y)) {
-            return false;
-        }
-
-        if (Float.floatToIntBits(z) != Float.floatToIntBits(other.z)) {
-            return false;
-        }
-
-        return true;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Vertex that = (Vertex) o;
+        return Math.abs(that.x - x) < 1e-6 &&
+                Math.abs(that.y - y) < 1e-6 &&
+                Math.abs(that.z - z) < 1e-6;
     }
 }

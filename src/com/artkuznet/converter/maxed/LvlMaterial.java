@@ -7,10 +7,28 @@ public class LvlMaterial {
         private final String shortName;
         private final int layerType; // 0 - no layer; 1 - alpha, 4 - light
 
-        public MaterialBitmap(final String name, final String shortName, final int layerType) {
+        private final boolean dualsided;
+        private final boolean alphaTest;
+        private final boolean adultContent;
+
+        private final double unk1 = 0;
+        private final double unk2 = 1;
+        private final double unk3 = 1;
+
+        public MaterialBitmap(
+                final String name,
+                final String shortName,
+                final int layerType,
+                final boolean dualsided,
+                final boolean alphaTest,
+                final boolean adultContent
+        ) {
             this.name = name;
             this.shortName = shortName;
             this.layerType = layerType;
+            this.dualsided = dualsided;
+            this.alphaTest = alphaTest;
+            this.adultContent = adultContent;
         }
 
         public String getName() {
@@ -24,13 +42,45 @@ public class LvlMaterial {
         public int getLayerType() {
             return layerType;
         }
+
+        public boolean isDualsided() {
+            return dualsided;
+        }
+
+        public boolean hasAlphaTest() {
+            return alphaTest;
+        }
+
+        public boolean hasAdultContent() {
+            return adultContent;
+        }
+
+        public double getUnk1() {
+            return unk1;
+        }
+
+        public double getUnk2() {
+            return unk2;
+        }
+
+        public double getUnk3() {
+            return unk3;
+        }
     }
 
     public static class BitmapLayer extends MaterialBitmap {
         private final String layerBitmapName;
 
-        public BitmapLayer(final String name, final String shortName, final int type, final String layerBitmapName) {
-            super(name, shortName, type);
+        public BitmapLayer(
+                final String name,
+                final String shortName,
+                final int layerType,
+                final boolean dualsided,
+                final boolean alphaTest,
+                final boolean adultContent,
+                final String layerBitmapName
+        ) {
+            super(name, shortName, layerType, dualsided, alphaTest, adultContent);
             this.layerBitmapName = layerBitmapName;
         }
 

@@ -11,4 +11,12 @@ public class MaterialProperties {
     public void setHasAdultContent(int hasAdultContent) {
         this.hasAdultContent = hasAdultContent;
     }
+
+    public int getHasAlphaTest() {
+        return hasAlphaTest;
+    }
+
+    public int getHasAdultContent() {
+        return hasAdultContent;
+    }
 }

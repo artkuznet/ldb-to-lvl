@@ -92,10 +92,6 @@ public class LVL {
             (byte) 0x00, (byte) 0x00
     };
 
-    public static final byte[] UNKNOWN_MATERIALS_DATA = new byte[]{
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -16, 63, 0, 0, 0, 0, 0, 0, 16, 64, 0, 0, 0
-    };
-
     public LVL(MaxLDB ldb) {
         bitmaps = ldb.getTextures()
                 .getList().stream()
@@ -106,16 +102,26 @@ public class LVL {
 
         ldb.getMaterials().getList().stream()
                 .collect(Collectors.groupingBy(Material::getCategoryName))
-                .forEach((materialName, materialBitmapList) -> {
-
-                    List<LvlMaterial.MaterialBitmap> materialBitmaps = materialBitmapList.stream()
-                            .map(material -> Objects.nonNull(material.getAlphaTexture())
-                                    ? new LvlMaterial.BitmapLayer(material.getDiffuseTexture().getFilePath(), material.getMaterialName(), 1, material.getAlphaTexture().getFilePath())
-                                    : new LvlMaterial.MaterialBitmap(material.getDiffuseTexture().getFilePath(), material.getMaterialName(), 0))
-                            .collect(Collectors.toList());
-
-                    materials.add(new LvlMaterial(materialName, materialBitmaps.toArray(new LvlMaterial.MaterialBitmap[0])));
-                });
+                .forEach((materialName, materialBitmapList) -> materials.add(
+                        new LvlMaterial(materialName, materialBitmapList.stream()
+                                .map(material -> Objects.nonNull(material.getAlphaTexture())
+                                        ? new LvlMaterial.BitmapLayer(
+                                        material.getDiffuseTexture().getFilePath(),
+                                        material.getMaterialName(),
+                                        1,
+                                        false,
+                                        false,//1 == material.getProperties().getHasAlphaTest(),
+                                        1 == material.getProperties().getHasAdultContent(),
+                                        material.getAlphaTexture().getFilePath()
+                                )
+                                        : new LvlMaterial.MaterialBitmap(
+                                        material.getDiffuseTexture().getFilePath(),
+                                        material.getMaterialName(),
+                                        0,
+                                        false,
+                                        false,//1 == material.getProperties().getHasAlphaTest(),
+                                        1 == material.getProperties().getHasAdultContent()
+                                )).toArray(LvlMaterial.MaterialBitmap[]::new))));
 
         final short[] polygonsCounter = {-1};
         final int[] meshCounter = {-1};
@@ -261,8 +267,13 @@ public class LVL {
                     .filter(polygons -> polygons.stream().anyMatch(p -> p instanceof LvlExit))
                     .collect(Collectors.toList());
 
+            List<List<LvlPolygon>> skyboxMeshes = groups.stream()
+                    .filter(polygons -> polygons.stream().allMatch(p -> p.getMaterialName().equalsIgnoreCase("skybox")))
+                    .collect(Collectors.toList());
+
             Set<LvlPolygon> emptyRoom = new HashSet<>(largestMesh);
             exitMeshes.forEach(emptyRoom::addAll);
+            skyboxMeshes.forEach(emptyRoom::addAll);
 
             List<List<LvlPolygon>> meshes = groups.stream()
                     .filter(polygons -> polygons.stream().noneMatch(emptyRoom::contains))
@@ -729,7 +740,12 @@ public class LVL {
                     data.addAll(toBytes(((LvlMaterial.BitmapLayer) materialBitmap).getLayerBitmapName()));
                 }
 
-                data.addAll(toBytes(UNKNOWN_MATERIALS_DATA));
+                data.addAll(toBytes(materialBitmap.getUnk1()));
+                data.addAll(toBytes(materialBitmap.getUnk2()));
+                data.addAll(toBytes(materialBitmap.getUnk3()));
+                data.add((byte) (materialBitmap.isDualsided() ? 1 : 0));
+                data.add((byte) (materialBitmap.hasAlphaTest() ? 1 : 0));
+                data.add((byte) (materialBitmap.hasAdultContent() ? 1 : 0));
             }
         }
 
@@ -1390,7 +1406,17 @@ public class LVL {
     private static List<Byte> dynamicString(String value) {
         List<Byte> data = new ArrayList<>();
 
-        data.addAll(toBytes(new byte[]{0x0D, 0x14, (byte) value.length()}));
+        if (value.length() > Short.MAX_VALUE) {
+            throw new RuntimeException();
+        }
+
+        data.add((byte) 0x0D);
+        if (value.length() <= Byte.MAX_VALUE) {
+            data.addAll(toBytes(new byte[]{0x14, (byte) value.length()}));
+        } else {
+            data.add((byte) 0x13);
+            data.addAll(toBytes((short) value.length()));
+        }
         data.addAll(toBytes(value));
 
         return data;
