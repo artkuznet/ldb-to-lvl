@@ -110,7 +110,7 @@ public class LVL {
                                         material.getMaterialName(),
                                         1,
                                         false,
-                                        false,//1 == material.getProperties().getHasAlphaTest(),
+                                        1 == material.getProperties().getHasAlphaTest(),
                                         1 == material.getProperties().getHasAdultContent(),
                                         material.getAlphaTexture().getFilePath()
                                 )
@@ -119,7 +119,7 @@ public class LVL {
                                         material.getMaterialName(),
                                         0,
                                         false,
-                                        false,//1 == material.getProperties().getHasAlphaTest(),
+                                        1 == material.getProperties().getHasAlphaTest(),
                                         1 == material.getProperties().getHasAdultContent()
                                 )).toArray(LvlMaterial.MaterialBitmap[]::new))));
 

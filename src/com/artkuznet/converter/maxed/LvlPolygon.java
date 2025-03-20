@@ -2,10 +2,7 @@ package com.artkuznet.converter.maxed;
 
 import com.artkuznet.converter.Vector3D;
 import com.artkuznet.converter.ldb.vertex.VertexUV;
-import com.artkuznet.converter.util.PixelColorExtractor;
-import com.artkuznet.converter.util.TgaParser;
-import com.artkuznet.converter.util.Triangulator;
-import com.artkuznet.converter.util.VectorCalculator;
+import com.artkuznet.converter.util.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -373,15 +370,7 @@ public class LvlPolygon {
     public List<Triangle> getDefaultTriangles(boolean forceTriangulate) {
         if (!forceTriangulate) {
             if (this.edges.length <= 4 || !(this instanceof LvlExit)) {
-                Triangle t = new Triangle();
-                t.normal = normal.clone();
-                t.vertices = new ArrayList<>();
-
-                for (Edge edge : edges) {
-                    t.vertices.add(edge.getTo());
-                }
-
-                return Collections.singletonList(t);
+                return getSimpleTriangles();
             }
         }
 
@@ -391,15 +380,31 @@ public class LvlPolygon {
                 .map(edge -> vertsCopy.get(edge.getTo()))
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        List<List<Vector3D>> triangulatedVertices = Triangulator.triangulate(verts);
+        try {
+            List<List<Vector3D>> triangulatedVertices = Triangulator.triangulate(verts);
 
-        return triangulatedVertices.stream()
-                .map(v -> {
-                    Triangle t = new Triangle();
-                    t.normal = normal.clone();
-                    t.vertices = v.stream().map(vertsCopy::indexOf).collect(Collectors.toList());
-                    return t;
-                }).collect(Collectors.toList());
+            return triangulatedVertices.stream()
+                    .map(v -> {
+                        Triangle t = new Triangle();
+                        t.normal = normal.clone();
+                        t.vertices = v.stream().map(vertsCopy::indexOf).collect(Collectors.toList());
+                        return t;
+                    }).collect(Collectors.toList());
+        } catch (Exception e) {
+            return getSimpleTriangles();
+        }
+    }
+
+    private List<Triangle> getSimpleTriangles() {
+        Triangle t = new Triangle();
+        t.normal = normal.clone();
+        t.vertices = new ArrayList<>();
+
+        for (Edge edge : edges) {
+            t.vertices.add(edge.getTo());
+        }
+
+        return Collections.singletonList(t);
     }
 
     public Vector3D getDefaultUnk5() {

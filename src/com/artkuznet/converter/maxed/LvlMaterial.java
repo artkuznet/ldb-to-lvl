@@ -48,7 +48,7 @@ public class LvlMaterial {
         }
 
         public boolean hasAlphaTest() {
-            return alphaTest;
+            return false; // todo return alphaTest;
         }
 
         public boolean hasAdultContent() {
