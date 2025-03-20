@@ -1328,7 +1328,7 @@ public class LVL {
             return dynamicTransform((float[][]) value);
         }
         if (value instanceof Short) {
-            return ((Short) value) >= 128 ? dynamicShort((Short) value) : dynamicByte(((Short) value).byteValue());
+            return ((Short) value) > Byte.MAX_VALUE ? dynamicShort((Short) value) : dynamicByte(((Short) value).byteValue());
         }
 
         throw new RuntimeException("unknown type");
@@ -1337,7 +1337,17 @@ public class LVL {
     private static List<Byte> dynamicFloat4List(List<float[]> value) {
         List<Byte> data = new ArrayList<>();
 
-        data.addAll(toBytes(new byte[]{0x11, (byte) value.size()}));
+        if (value.size() > Short.MAX_VALUE) {
+            throw new RuntimeException(String.valueOf(value.size()));
+        }
+
+        if (value.size() <= Byte.MAX_VALUE) {
+            data.addAll(toBytes(new byte[]{0x11, (byte) value.size()}));
+        } else {
+            data.add((byte) 0x10);
+            data.addAll(toBytes((short) value.size()));
+        }
+
         for (int i = 0; i < value.size(); i++) {
             data.addAll(toDynamicBytes((byte) 0x70));
             data.addAll(toDynamicBytes((byte) 0x01));

@@ -43,6 +43,10 @@ public abstract class MaxObject implements BaseObject {
     }
 
     public void setName(final String name) {
+        if (name.length() > Byte.MAX_VALUE) {
+            throw new RuntimeException();
+        }
+
         this.name = name;
     }
 
