@@ -378,8 +378,6 @@ public class LVL {
                                 0
                         };
 
-                        dynamic.setName(ldbDynamicMesh.getShortName());
-
                         dynamic.setFlipFaces(false);
 
                         dynamic.setVertices(lvlVertexList.toArray(new Vector3D[0]));
@@ -388,6 +386,19 @@ public class LVL {
 
                         dynamic.parentName = ldbDynamicMesh.getProperties().getParentDynamicMeshName();
                         dynamic.fullName = ldbDynamicMesh.getSharedName();
+
+                        String sharedName = ldbDynamicMesh.getSharedName();
+                        String realParent = sharedName.substring(0, sharedName.lastIndexOf("::"));
+                        String parentName = dynamic.parentName.replaceFirst("\\.DO$", "");
+
+                        if (!dynamic.parentName.isEmpty() && !parentName.equals(realParent)) {
+                            dynamic.setName(
+                                    realParent.replace(parentName, "").replaceAll("^::", "")
+                                            + "_" + ldbDynamicMesh.getShortName()
+                            );
+                        } else {
+                            dynamic.setName(ldbDynamicMesh.getShortName());
+                        }
 
                         dynamic.setTransform(ldbDynamicMesh.getProperties().getObjectToParentTransformDouble());
 
