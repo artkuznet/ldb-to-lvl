@@ -1,6 +1,5 @@
 package com.artkuznet.converter.mapper;
 
-import com.artkuznet.converter.Options;
 import com.artkuznet.converter.ldb.character.Character;
 import com.artkuznet.converter.ldb.dynamicmesh.LdbDynamicMesh;
 import com.artkuznet.converter.ldb.fsm.*;
@@ -52,10 +51,6 @@ public class FsmDataMapper {
 
     public FloatingFSM.FSMData toFSMData(MaxObject object, LdbFSM ldbFSM, LdbDynamicMesh ldbDynamicMesh) {
         FloatingFSM.FSMData fsmData = new FloatingFSM.FSMData();
-
-        if (object instanceof Dynamic && Options.getInstance().skipDynamicFSM) {
-            return fsmData;
-        }
 
         String oldObjectName = object.fullName;
         if (object instanceof Dynamic) {

@@ -9,7 +9,7 @@ public final class Options {
 
     public boolean skipJoinPolygons = false;
 
-    public boolean skipDynamicFSM = false;
+    public double scale = 1.0;
 
     public static Options getInstance() {
         if (INSTANCE == null) {

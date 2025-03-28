@@ -19,6 +19,9 @@ import com.artkuznet.converter.obj.OBJ;
 import com.artkuznet.converter.util.MeshBuilder;
 import com.artkuznet.converter.util.TgaParser;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -97,19 +100,19 @@ public class LVL {
 
     public LVL(OBJ obj) {
         Map<String, List<LvlMaterial.MaterialBitmap>> materialTextures = new HashMap<>();
-        Map<String, String> mtlDiffuseFilenames = new HashMap<>();
 
         for (MTL.Material mtlMaterial : obj.getMTL().getMaterials()) {
-            mtlDiffuseFilenames.put(mtlMaterial.getName(), mtlMaterial.getDiffuseFilename());
+            final byte[] bitmapData;
+            try {
+                bitmapData = Files.readAllBytes(Paths.get(mtlMaterial.getDiffuseFilename()));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
 
-            Bitmap bitmap = new Bitmap(mtlMaterial.getDiffuseFilename());
+            Bitmap bitmap = new Bitmap(mtlMaterial.getName(), bitmapData);
             LvlMaterial.MaterialBitmap texture = new LvlMaterial.MaterialBitmap(
-                    mtlMaterial.getDiffuseFilename(),
-                    mtlMaterial.getDiffuseFilename()
-                            .replace("\\", "/")
-                            .split("/")[mtlMaterial.getDiffuseFilename()
-                            .replace("\\", "/")
-                            .split("/").length - 1],
+                    mtlMaterial.getName(),
+                    mtlMaterial.getName(),
                     0,
                     false,
                     false,
@@ -134,22 +137,28 @@ public class LVL {
             ));
         }
 
+        Map<String, String> textureMaterials = new HashMap<>();
+        materialTextures.forEach((key, value) -> value.forEach(materialBitmap -> textureMaterials.put(materialBitmap.getName(), key)));
+
+        double scale = Options.getInstance().scale;
+
         List<Mesh> meshes = obj.getObjects().stream()
                 .map(object3D -> {
+
+                    System.out.println("Object: " + object3D.getName());
+
                     Mesh mesh = new Mesh();
 
                     List<Vector3D> objectVertices = object3D.getVertices().stream()
                             .map(v -> new Vector3D(v.getX(), v.getY(), -v.getZ()))
-//                            .map(v -> v.multiply(0.02)) // todo parameter
+                            .map(v -> v.multiply(scale))
                             .collect(Collectors.toList());
 
                     mesh.setName(object3D.getName());
                     mesh.setFlipFaces(true);
                     mesh.setVertices(objectVertices.toArray(new Vector3D[0]));
 
-                    List<OBJ.UV> uvList = object3D.getUV();
                     int minVertexIndex = object3D.getMinVertexIndex();
-                    int minUVIndex = object3D.getMinUvIndex();
 
                     mesh.setPolygons(object3D.getFaces().stream()
                             .map(face -> {
@@ -176,7 +185,7 @@ public class LVL {
 
                                 LvlPolygon polygon = new LvlPolygon(
                                         edges,
-                                        materials.get(0).getName(), // todo
+                                        textureMaterials.get(face.getMaterialName()),
                                         face.getMaterialName(),
                                         normal
                                 );

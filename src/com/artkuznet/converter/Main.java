@@ -9,12 +9,33 @@ import java.util.*;
 public class Main {
 
     public static void main(final String[] args) {
+
+        Options options = Options.getInstance();
+
+        if (Arrays.stream(args).anyMatch("--skip-join-polygons"::equalsIgnoreCase)) {
+            options.skipJoinPolygons = true;
+            System.out.println("Skip polygon joining");
+        }
+
+        Optional<String> scaleArg = Arrays.stream(args)
+                .map(String::toLowerCase)
+                .filter(s1 -> s1.startsWith("--scale="))
+                .findFirst();
+
+        if (scaleArg.isPresent()) {
+            options.scale = Double.parseDouble(scaleArg.get().substring("--scale=".length()).replace(",", "."));
+            System.out.println("Scale = " + options.scale);
+        }
+
         String ldbFilename = Arrays.stream(args).filter(a -> a.toLowerCase().endsWith(".ldb")).findFirst().orElse(null);
         String objFilename = Arrays.stream(args).filter(a -> a.toLowerCase().endsWith(".obj")).findFirst().orElse(null);
 
         // todo refactor
 
         if (objFilename != null) {
+
+            System.out.println("OBJ file: " + objFilename);
+
             try {
                 String lvlFilename = objFilename.replace(".obj", ".lvl");
 
@@ -44,17 +65,6 @@ public class Main {
         }
 
         System.out.println("LDB file: " + ldbFilename);
-
-        Options options = Options.getInstance();
-
-        if (Arrays.stream(args).anyMatch("--skip-join-polygons"::equalsIgnoreCase)) {
-            options.skipJoinPolygons = true;
-            System.out.println("Skip polygon joining");
-        }
-        if (Arrays.stream(args).anyMatch("--skip-dynamic-fsm"::equalsIgnoreCase)) {
-            options.skipDynamicFSM = true;
-            System.out.println("Skip dynamic mesh fsm data");
-        }
 
         String lvlFilename = ldbFilename.replace(".ldb", ".lvl");
 

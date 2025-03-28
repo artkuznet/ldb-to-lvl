@@ -34,11 +34,11 @@ public class LvlMaterial {
         }
 
         public String getName() {
-            return replace8bit(name);
+            return name;
         }
 
         public String getShortName() {
-            return replace8bit(shortName);
+            return shortName;
         }
 
         public int getLayerType() {
@@ -105,12 +105,5 @@ public class LvlMaterial {
 
     public MaterialBitmap[] getBitmaps() {
         return bitmaps;
-    }
-
-    // todo util
-    private static String replace8bit(String str) {
-        return str.chars()
-                .mapToObj(c -> (c <= 255) ? String.valueOf((char) c) : "?")
-                .collect(Collectors.joining());
     }
 }

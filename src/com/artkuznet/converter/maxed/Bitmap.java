@@ -17,18 +17,14 @@ public class Bitmap {
         this.data = data;
     }
 
-    public Bitmap(String name) {
+    public Bitmap(final String name, final byte[] data) {
         this.name = name;
-        try {
-            this.data = Files.readAllBytes(Paths.get(name));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        this.type = getType(this.data[0]);
+        this.type = getType(data[0]);
+        this.data = data;
     }
 
     public String getName() {
-        return replace8bit(name);
+        return name;
     }
 
     public int getType() {
@@ -63,12 +59,5 @@ public class Bitmap {
             default:
                 throw new RuntimeException("Unsupported bitmap type");
         }
-    }
-
-    // todo util
-    private static String replace8bit(String str) {
-        return str.chars()
-                .mapToObj(c -> (c <= 255) ? String.valueOf((char) c) : "?")
-                .collect(Collectors.joining());
     }
 }
