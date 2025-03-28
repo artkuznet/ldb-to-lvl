@@ -2,6 +2,7 @@ package com.artkuznet.converter;
 
 import com.artkuznet.converter.ldb.MaxLDBReader;
 import com.artkuznet.converter.lvl.LVL;
+import com.artkuznet.converter.obj.OBJ;
 
 import java.util.*;
 
@@ -9,6 +10,34 @@ public class Main {
 
     public static void main(final String[] args) {
         String ldbFilename = Arrays.stream(args).filter(a -> a.toLowerCase().endsWith(".ldb")).findFirst().orElse(null);
+        String objFilename = Arrays.stream(args).filter(a -> a.toLowerCase().endsWith(".obj")).findFirst().orElse(null);
+
+        // todo refactor
+
+        if (objFilename != null) {
+            try {
+                String lvlFilename = objFilename.replace(".obj", ".lvl");
+
+                Writer writer = new Writer(lvlFilename);
+                List<Byte> bytesList = new LVL(new OBJ(objFilename)).toBytes();
+                byte[] bytesArray = new byte[bytesList.size()];
+                for (int i = 0; i < bytesArray.length; i++) {
+                    bytesArray[i] = bytesList.get(i);
+                }
+                writer.writeBytes(bytesArray);
+
+                try {
+                    writer.save();
+                    System.out.println("Saved as: " + lvlFilename);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            return;
+        }
 
         if (ldbFilename == null) {
             throw new RuntimeException("Missing .ldb filename");

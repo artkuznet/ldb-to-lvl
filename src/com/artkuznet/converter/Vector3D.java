@@ -167,9 +167,9 @@ public class Vector3D {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Vector3D that = (Vector3D) o;
-        return Math.abs(that.x - x) < 1e-6 &&
-                Math.abs(that.y - y) < 1e-6 &&
-                Math.abs(that.z - z) < 1e-6;
+        return Math.abs(that.x - x) < 1e-8 &&
+                Math.abs(that.y - y) < 1e-8 &&
+                Math.abs(that.z - z) < 1e-8;
     }
 
     public Vector3D rotate(double[][] rotateMatrix) {

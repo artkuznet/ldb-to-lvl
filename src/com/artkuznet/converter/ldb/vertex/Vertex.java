@@ -45,8 +45,8 @@ public class Vertex {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Vertex that = (Vertex) o;
-        return Math.abs(that.x - x) < 1e-6 &&
-                Math.abs(that.y - y) < 1e-6 &&
-                Math.abs(that.z - z) < 1e-6;
+        return Math.abs(that.x - x) < 1e-8 &&
+                Math.abs(that.y - y) < 1e-8 &&
+                Math.abs(that.z - z) < 1e-8;
     }
 }

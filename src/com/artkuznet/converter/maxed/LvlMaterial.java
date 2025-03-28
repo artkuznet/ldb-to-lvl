@@ -1,5 +1,7 @@
 package com.artkuznet.converter.maxed;
 
+import java.util.stream.Collectors;
+
 public class LvlMaterial {
 
     public static class MaterialBitmap {
@@ -32,11 +34,11 @@ public class LvlMaterial {
         }
 
         public String getName() {
-            return name;
+            return replace8bit(name);
         }
 
         public String getShortName() {
-            return shortName;
+            return replace8bit(shortName);
         }
 
         public int getLayerType() {
@@ -103,5 +105,12 @@ public class LvlMaterial {
 
     public MaterialBitmap[] getBitmaps() {
         return bitmaps;
+    }
+
+    // todo util
+    private static String replace8bit(String str) {
+        return str.chars()
+                .mapToObj(c -> (c <= 255) ? String.valueOf((char) c) : "?")
+                .collect(Collectors.joining());
     }
 }

@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 public class PolygonGrouper {
 
-    private static final double EPSILON = 1e-6;
+    private static final double EPSILON = 1e-8;
 
     public static List<List<VertexPolygon>> groupPolygons(List<VertexPolygon> vertexPolygons) {
         return vertexPolygons.stream()
