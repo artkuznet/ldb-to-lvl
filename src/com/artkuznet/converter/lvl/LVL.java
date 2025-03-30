@@ -207,7 +207,7 @@ public class LVL {
                                 return polygon;
                             }).toArray(LvlPolygon[]::new));
 
-                    return mesh.optimize().joinPolygons();
+                    return mesh.optimize().joinPolygons().buildPolyGroups();
                 }).collect(Collectors.toList());
 
         objects.addAll(meshes);
@@ -306,7 +306,7 @@ public class LVL {
 
                 poly.index = ++polygonsCounter[0];
 
-                poly.geometryPolyGroup = geometryPolygon.getSmoothingGroup();
+                poly.setGeometryPolyGroup(geometryPolygon.getSmoothingGroup());
                 poly.maxEdgeLength = geometryPolygon.getMaxEdgeLength();
                 poly.maxAngle = geometryPolygon.getMaxAngle();
 
@@ -469,7 +469,7 @@ public class LVL {
 
                             poly.index = ++polygonsCounter[0];
 
-                            poly.geometryPolyGroup = geometryPolygon.getSmoothingGroup();
+                            poly.setGeometryPolyGroup(geometryPolygon.getSmoothingGroup());
                             poly.maxEdgeLength = geometryPolygon.getMaxEdgeLength();
                             poly.maxAngle = geometryPolygon.getMaxAngle();
 

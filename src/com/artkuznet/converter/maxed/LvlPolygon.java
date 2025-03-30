@@ -117,7 +117,11 @@ public class LvlPolygon {
 
     public short index;
 
-    public int geometryPolyGroup = 0;
+    private int geometryPolyGroup = 0;
+
+    public void setGeometryPolyGroup(int geometryPolyGroup) {
+        this.geometryPolyGroup = geometryPolyGroup;
+    }
 
     public int getGeometryPolyGroup() {
         return geometryPolyGroup;
@@ -131,10 +135,6 @@ public class LvlPolygon {
     public short getIndex() {
         return index;
     }
-
-    public List<Short> neighborIndices = new ArrayList<>();
-
-    public boolean grouped = false;
 
     private Edge[] edges;
     private String materialName;

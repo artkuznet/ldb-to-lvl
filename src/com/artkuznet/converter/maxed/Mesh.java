@@ -1,8 +1,8 @@
 package com.artkuznet.converter.maxed;
 
-import com.artkuznet.converter.Options;
 import com.artkuznet.converter.Vector3D;
 import com.artkuznet.converter.util.ContourFinder;
+import com.artkuznet.converter.util.PolyGroupAssigner;
 import com.artkuznet.converter.util.PolygonGrouper;
 import com.artkuznet.converter.util.PolygonProcessor;
 
@@ -202,7 +202,12 @@ public class Mesh extends MaxObject {
     }
 
     public Mesh buildPolyGroups() {
-        Map<Integer, List<LvlPolygon>> groupedPolygons = Arrays.stream(this.polygons).filter(p -> p.geometryPolyGroup != 0)
+
+        if (!(this instanceof DynamicMesh)) {
+            PolyGroupAssigner.assignGeometryPolyGroups(this.polygons); // todo feature flag
+        }
+
+        Map<Integer, List<LvlPolygon>> groupedPolygons = Arrays.stream(this.polygons).filter(p -> p.getGeometryPolyGroup() != 0)
                 .collect(Collectors.groupingBy(LvlPolygon::getGeometryPolyGroup));
 
         if (!groupedPolygons.isEmpty()) {
@@ -222,7 +227,7 @@ public class Mesh extends MaxObject {
                 List<Integer> polygonNumbers = new ArrayList<>();
 
                 for (int i = 0; i < this.polygons.length; i++) {
-                    if (this.polygons[i].geometryPolyGroup == polyGroupId) {
+                    if (this.polygons[i].getGeometryPolyGroup() == polyGroupId) {
                         polygonNumbers.add(i);
                         if (maxAngle == null) {
                             maxAngle = (float) ((this.polygons[i].maxAngle * 180.) / Math.PI);
