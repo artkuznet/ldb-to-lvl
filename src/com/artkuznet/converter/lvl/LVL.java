@@ -143,7 +143,7 @@ public class LVL {
         List<Mesh> meshes = obj.getObjects().stream()
                 .map(object3D -> {
 
-                    System.out.println("Object: " + object3D.getName());
+                    System.out.printf("✅ %s%n", object3D.getName());
 
                     Mesh mesh = new Mesh();
 
@@ -152,7 +152,7 @@ public class LVL {
                             .collect(Collectors.toList());
 
                     mesh.setName(object3D.getName());
-                    mesh.setFlipFaces(true);
+                    mesh.setFlipFaces(false);
                     mesh.setVertices(objectVertices.toArray(new Vector3D[0]));
 
                     int minVertexIndex = object3D.getMinVertexIndex();
@@ -162,8 +162,8 @@ public class LVL {
 
                                 LvlPolygon.Edge[] edges = new LvlPolygon.Edge[face.getVertices().size()];
                                 for (int i = 0; i < edges.length; i++) {
-                                    int from = face.getVertices().get(i).getIndex() + minVertexIndex;
-                                    int to = face.getVertices().get((1 + i) % edges.length).getIndex() + minVertexIndex;
+                                    int from = face.getVertices().get(i).getIndex() - minVertexIndex;
+                                    int to = face.getVertices().get((1 + i) % edges.length).getIndex() - minVertexIndex;
                                     edges[i] = new LvlPolygon.Edge(from, to);
                                 }
 
@@ -182,7 +182,7 @@ public class LVL {
 
                                 LvlPolygon polygon = new LvlPolygon(
                                         edges,
-                                        textureMaterials.get(face.getMaterialName()),
+                                        textureMaterials.getOrDefault(face.getMaterialName(), "default"),
                                         face.getMaterialName(),
                                         normal
                                 );
@@ -368,11 +368,9 @@ public class LVL {
 
             String roomName = room.getName().replaceFirst("::", "");
 
-            System.out.println("Room: " + roomName);
-
+            System.out.printf("✅ %s%n", roomName);
 
             List<List<LvlPolygon>> groups = MeshBuilder.groupPolygons(lvlPolygons, lvlVertexList);
-
 
             List<LvlPolygon> largestMesh = groups.stream()
                     .max(Comparator.comparingDouble(o -> o.stream()

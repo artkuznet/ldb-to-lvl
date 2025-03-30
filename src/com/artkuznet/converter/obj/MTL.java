@@ -1,5 +1,7 @@
 package com.artkuznet.converter.obj;
 
+import com.artkuznet.converter.util.Out;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -75,6 +77,11 @@ public class MTL {
                     filenameDiffuse = null;
                 }
             }
+
+            if (materials.isEmpty()) {
+                Out.println("No materials found!", Out.Color.RED);
+            }
+
             sr.close();
         } catch (IOException e) {
             throw new RuntimeException(e);

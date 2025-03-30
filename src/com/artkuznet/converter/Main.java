@@ -3,6 +3,7 @@ package com.artkuznet.converter;
 import com.artkuznet.converter.ldb.MaxLDBReader;
 import com.artkuznet.converter.lvl.LVL;
 import com.artkuznet.converter.obj.OBJ;
+import com.artkuznet.converter.util.Out;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -23,21 +24,21 @@ public class Main {
 
         if (Arrays.stream(args).anyMatch("--skip-join-polygons"::equalsIgnoreCase)) {
             options.skipJoinPolygons = true;
-            System.out.println("Skip polygon joining");
+            Out.println("Skip polygon joining", Out.Color.CYAN);
         }
 
         for (String filename : filenames) {
             if (filename.toLowerCase().endsWith(".ldb")) {
-                System.out.printf("LDB file: \"%s\"%n", filename);
+                Out.println(String.format("Read LDB file: \"%s\"", filename), Out.Color.MAGENTA);
                 saveLvl(filename.replace(".ldb", ".lvl"), new LVL(new MaxLDBReader(filename).getLdb()));
             }
             if (filename.toLowerCase().endsWith(".obj")) {
-                System.out.printf("OBJ file: \"%s\"%n", filename);
+                Out.println(String.format("Read OBJ file: \"%s\"", filename), Out.Color.MAGENTA);
                 saveLvl(filename.replace(".obj", ".lvl"), new LVL(new OBJ(filename)));
             }
         }
 
-        System.out.println("Done");
+        Out.println("Done%n", Out.Color.GREEN);
     }
 
     private static void saveLvl(String filename, LVL lvl) {
@@ -52,7 +53,7 @@ public class Main {
 
         try {
             writer.save();
-            System.out.printf("Saved as: \"%s\"%n%n", filename);
+            Out.println(String.format("Saved as: \"%s\"%n", filename), Out.Color.GREEN);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
