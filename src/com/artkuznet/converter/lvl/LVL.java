@@ -143,7 +143,7 @@ public class LVL {
         List<Mesh> meshes = obj.getObjects().stream()
                 .map(object3D -> {
 
-                    System.out.printf("✅ %s%n", object3D.getName());
+                    System.out.printf("+ %s%n", object3D.getName());
 
                     Mesh mesh = new Mesh();
 
@@ -368,7 +368,7 @@ public class LVL {
 
             String roomName = room.getName().replaceFirst("::", "");
 
-            System.out.printf("✅ %s%n", roomName);
+            System.out.printf("+ %s%n", roomName);
 
             List<List<LvlPolygon>> groups = MeshBuilder.groupPolygons(lvlPolygons, lvlVertexList);
 

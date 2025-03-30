@@ -190,7 +190,7 @@ public class OBJ {
                     if (mtl != null) {
                         throw new RuntimeException(ERROR_MSG);
                     }
-                    mtl = new MTL(dirName + "\\" + line.substring(MTLLIB.length()).trim());
+                    mtl = new MTL((dirName != null ? dirName + "\\" : "") + line.substring(MTLLIB.length()).trim());
                 }
 
                 if (line.startsWith(V + " ")) {
