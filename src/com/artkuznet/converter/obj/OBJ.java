@@ -5,6 +5,7 @@ import com.artkuznet.converter.Vector3D;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -170,89 +171,93 @@ public class OBJ {
         return mtl;
     }
 
-    public OBJ(String filename) throws Exception {
-        BufferedReader sr = new BufferedReader(new FileReader(filename));
+    public OBJ(String filename) {
+        try {
+            BufferedReader sr = new BufferedReader(new FileReader(filename));
 
-        String dirName = new File(filename).getParent();
+            String dirName = new File(filename).getParent();
 
-        String materialName = null;
-        String objectName = null;
+            String materialName = null;
+            String objectName = null;
 
-        Object3D o = new Object3D();
+            Object3D o = new Object3D();
 
-        String line;
-        while ((line = sr.readLine()) != null) {
-            line = line.trim();
+            String line;
+            while ((line = sr.readLine()) != null) {
+                line = line.trim();
 
-            if (line.startsWith(MTLLIB + " ")) {
-                if (mtl != null) {
-                    throw new Exception(ERROR_MSG);
-                }
-                mtl = new MTL(dirName + "\\" + line.substring(MTLLIB.length()).trim());
-            }
-
-            if (line.startsWith(V + " ")) {
-                String[] vertexStr = line.substring(V.length()).trim().split(" ");
-                if (vertexStr.length != 3) {
-                    throw new Exception(ERROR_MSG);
-                }
-                o.addVertex(new Vector3D(toDouble(vertexStr[0]), toDouble(vertexStr[1]), toDouble(vertexStr[2])));
-            }
-
-            if (line.startsWith(VN + " ")) {
-                String[] normalStr = line.substring(VN.length()).trim().split(" ");
-                if (normalStr.length != 3) {
-                    throw new Exception(ERROR_MSG);
-                }
-                o.addNormal(new Vector3D(toDouble(normalStr[0]), toDouble(normalStr[1]), toDouble(normalStr[2])));
-            }
-
-            if (line.startsWith(VT + " ")) {
-                String[] uvStr = line.substring(VT.length()).trim().split(" ");
-                if (uvStr.length != 2 && uvStr.length != 3) {
-                    throw new Exception(ERROR_MSG);
-                }
-                o.addUV(new UV(toDouble(uvStr[0]), toDouble(uvStr[1])));
-            }
-
-            if (line.startsWith(USEMTL + " ")) {
-                materialName = line.substring(USEMTL.length()).trim();
-            }
-
-            if (line.startsWith(O + " ")) {
-                if (objectName != null) {
-                    objects.add(o);
-                    o = new Object3D();
-                }
-                objectName = line.substring(O.length()).trim();
-                o.setName(objectName);
-            }
-
-            if (line.startsWith(F + " ")) {
-                String[] faceStr = line.substring(F.length()).trim().split(" ");
-                if (faceStr.length < 3) {
-                    throw new Exception(ERROR_MSG);
+                if (line.startsWith(MTLLIB + " ")) {
+                    if (mtl != null) {
+                        throw new RuntimeException(ERROR_MSG);
+                    }
+                    mtl = new MTL(dirName + "\\" + line.substring(MTLLIB.length()).trim());
                 }
 
-                List<Face.Vertex> faceVertices = new ArrayList<>();
-                for (String fStr : faceStr) {
-                    String[] vStr = fStr.split("/");
-
-                    int vIndex = Integer.parseInt(vStr[0]) - 1;
-                    int vtIndex = vStr.length > 1 && vStr[1].length() > 0 ? (Integer.parseInt(vStr[1]) - 1) : -1;
-                    int vnIndex = vStr.length > 2 ? (Integer.parseInt(vStr[2]) - 1) : -1;
-
-                    faceVertices.add(new Face.Vertex(vIndex, vtIndex, vnIndex));
+                if (line.startsWith(V + " ")) {
+                    String[] vertexStr = line.substring(V.length()).trim().split(" ");
+                    if (vertexStr.length != 3) {
+                        throw new RuntimeException(ERROR_MSG);
+                    }
+                    o.addVertex(new Vector3D(toDouble(vertexStr[0]), toDouble(vertexStr[1]), toDouble(vertexStr[2])));
                 }
 
-                Collections.reverse(faceVertices);
+                if (line.startsWith(VN + " ")) {
+                    String[] normalStr = line.substring(VN.length()).trim().split(" ");
+                    if (normalStr.length != 3) {
+                        throw new RuntimeException(ERROR_MSG);
+                    }
+                    o.addNormal(new Vector3D(toDouble(normalStr[0]), toDouble(normalStr[1]), toDouble(normalStr[2])));
+                }
 
-                o.addFace(new Face(faceVertices, materialName, o));
+                if (line.startsWith(VT + " ")) {
+                    String[] uvStr = line.substring(VT.length()).trim().split(" ");
+                    if (uvStr.length != 2 && uvStr.length != 3) {
+                        throw new RuntimeException(ERROR_MSG);
+                    }
+                    o.addUV(new UV(toDouble(uvStr[0]), toDouble(uvStr[1])));
+                }
+
+                if (line.startsWith(USEMTL + " ")) {
+                    materialName = line.substring(USEMTL.length()).trim();
+                }
+
+                if (line.startsWith(O + " ")) {
+                    if (objectName != null) {
+                        objects.add(o);
+                        o = new Object3D();
+                    }
+                    objectName = line.substring(O.length()).trim();
+                    o.setName(objectName);
+                }
+
+                if (line.startsWith(F + " ")) {
+                    String[] faceStr = line.substring(F.length()).trim().split(" ");
+                    if (faceStr.length < 3) {
+                        throw new RuntimeException(ERROR_MSG);
+                    }
+
+                    List<Face.Vertex> faceVertices = new ArrayList<>();
+                    for (String fStr : faceStr) {
+                        String[] vStr = fStr.split("/");
+
+                        int vIndex = Integer.parseInt(vStr[0]) - 1;
+                        int vtIndex = vStr.length > 1 && vStr[1].length() > 0 ? (Integer.parseInt(vStr[1]) - 1) : -1;
+                        int vnIndex = vStr.length > 2 ? (Integer.parseInt(vStr[2]) - 1) : -1;
+
+                        faceVertices.add(new Face.Vertex(vIndex, vtIndex, vnIndex));
+                    }
+
+                    Collections.reverse(faceVertices);
+
+                    o.addFace(new Face(faceVertices, materialName, o));
+                }
             }
+
+            objects.add(o);
+            sr.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-
-        objects.add(o);
-        sr.close();
     }
 
     private static double toDouble(String value) {

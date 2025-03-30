@@ -5,10 +5,19 @@ import com.artkuznet.converter.lvl.LVL;
 import com.artkuznet.converter.obj.OBJ;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
 
     public static void main(final String[] args) {
+
+        List<String> filenames = Arrays.stream(args)
+                .filter(a -> a.toLowerCase().endsWith(".ldb") || a.toLowerCase().endsWith(".obj"))
+                .collect(Collectors.toList());
+
+        if (filenames.isEmpty()) {
+            throw new RuntimeException("Filename(s) missing");
+        }
 
         Options options = Options.getInstance();
 
@@ -17,60 +26,24 @@ public class Main {
             System.out.println("Skip polygon joining");
         }
 
-        Optional<String> scaleArg = Arrays.stream(args)
-                .map(String::toLowerCase)
-                .filter(s1 -> s1.startsWith("--scale="))
-                .findFirst();
-
-        if (scaleArg.isPresent()) {
-            options.scale = Double.parseDouble(scaleArg.get().substring("--scale=".length()).replace(",", "."));
-            System.out.println("Scale = " + options.scale);
-        }
-
-        String ldbFilename = Arrays.stream(args).filter(a -> a.toLowerCase().endsWith(".ldb")).findFirst().orElse(null);
-        String objFilename = Arrays.stream(args).filter(a -> a.toLowerCase().endsWith(".obj")).findFirst().orElse(null);
-
-        // todo refactor
-
-        if (objFilename != null) {
-
-            System.out.println("OBJ file: " + objFilename);
-
-            try {
-                String lvlFilename = objFilename.replace(".obj", ".lvl");
-
-                Writer writer = new Writer(lvlFilename);
-                List<Byte> bytesList = new LVL(new OBJ(objFilename)).toBytes();
-                byte[] bytesArray = new byte[bytesList.size()];
-                for (int i = 0; i < bytesArray.length; i++) {
-                    bytesArray[i] = bytesList.get(i);
-                }
-                writer.writeBytes(bytesArray);
-
-                try {
-                    writer.save();
-                    System.out.println("Saved as: " + lvlFilename);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        for (String filename : filenames) {
+            if (filename.toLowerCase().endsWith(".ldb")) {
+                System.out.printf("LDB file: \"%s\"%n", filename);
+                saveLvl(filename.replace(".ldb", ".lvl"), new LVL(new MaxLDBReader(filename).getLdb()));
             }
-
-            return;
+            if (filename.toLowerCase().endsWith(".obj")) {
+                System.out.printf("OBJ file: \"%s\"%n", filename);
+                saveLvl(filename.replace(".obj", ".lvl"), new LVL(new OBJ(filename)));
+            }
         }
 
-        if (ldbFilename == null) {
-            throw new RuntimeException("Missing .ldb filename");
-        }
+        System.out.println("Done");
+    }
 
-        System.out.println("LDB file: " + ldbFilename);
+    private static void saveLvl(String filename, LVL lvl) {
+        Writer writer = new Writer(filename);
 
-        String lvlFilename = ldbFilename.replace(".ldb", ".lvl");
-
-        Writer writer = new Writer(lvlFilename);
-
-        List<Byte> bytesList = new LVL(new MaxLDBReader(ldbFilename).getLdb()).toBytes();
+        List<Byte> bytesList = lvl.toBytes();
         byte[] bytesArray = new byte[bytesList.size()];
         for (int i = 0; i < bytesArray.length; i++) {
             bytesArray[i] = bytesList.get(i);
@@ -79,11 +52,9 @@ public class Main {
 
         try {
             writer.save();
-            System.out.println("Saved as: " + lvlFilename);
+            System.out.printf("Saved as: \"%s\"%n%n", filename);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-        System.out.println("Done");
     }
 }

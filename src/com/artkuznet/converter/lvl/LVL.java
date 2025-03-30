@@ -140,8 +140,6 @@ public class LVL {
         Map<String, String> textureMaterials = new HashMap<>();
         materialTextures.forEach((key, value) -> value.forEach(materialBitmap -> textureMaterials.put(materialBitmap.getName(), key)));
 
-        double scale = Options.getInstance().scale;
-
         List<Mesh> meshes = obj.getObjects().stream()
                 .map(object3D -> {
 
@@ -151,7 +149,6 @@ public class LVL {
 
                     List<Vector3D> objectVertices = object3D.getVertices().stream()
                             .map(v -> new Vector3D(v.getX(), v.getY(), -v.getZ()))
-                            .map(v -> v.multiply(scale))
                             .collect(Collectors.toList());
 
                     mesh.setName(object3D.getName());

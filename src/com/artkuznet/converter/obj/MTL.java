@@ -3,6 +3,7 @@ package com.artkuznet.converter.obj;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,42 +36,48 @@ public class MTL {
         return materials;
     }
 
-    public MTL(String filename) throws Exception {
-        BufferedReader sr = new BufferedReader(new FileReader(filename));
+    public MTL(String filename) {
+        try {
+            BufferedReader sr = new BufferedReader(new FileReader(filename));
 
-        String dirName = new File(filename).getParent();
+            String dirName = new File(filename).getParent();
 
-        String materialName = null;
-        String filenameDiffuse = null;
+            String materialName = null;
+            String filenameDiffuse = null;
 
-        String line;
-        while ((line = sr.readLine()) != null) {
-            line = line.trim();
+            String line;
+            while ((line = sr.readLine()) != null) {
+                line = line.trim();
 
-            if (line.startsWith(NEWMTL + " ")) {
-                if (materialName != null) {
-                    throw new Exception(ERROR_MSG);
+                if (line.startsWith(NEWMTL + " ")) {
+                    if (materialName != null) {
+                        throw new RuntimeException(ERROR_MSG);
+                    }
+                    materialName = line.substring(NEWMTL.length()).trim();
                 }
-                materialName = line.substring(NEWMTL.length()).trim();
-            }
-            if (line.startsWith(MAP_KD + " ")) {
-                if (filenameDiffuse != null) {
-                    throw new Exception(ERROR_MSG);
+                if (line.startsWith(MAP_KD + " ")) {
+                    if (filenameDiffuse != null) {
+                        throw new RuntimeException(ERROR_MSG);
+                    }
+                    filenameDiffuse = line.substring(MAP_KD.length()).trim();
                 }
-                filenameDiffuse = line.substring(MAP_KD.length()).trim();
-            }
 
-            if (materialName != null && filenameDiffuse != null) {
-                String filenameDiffuseFull = dirName + "\\" + filenameDiffuse;
-                if (materials.stream().anyMatch(m -> m.getDiffuseFilename().equals(filenameDiffuseFull))) {
-                    throw new Exception("Material filename collision: " + filenameDiffuseFull);
+                if (materialName != null && filenameDiffuse != null) {
+                    String filenameDiffuseFull = filenameDiffuse.contains(":")
+                            ? filenameDiffuse
+                            : dirName + "\\" + filenameDiffuse;
+                    if (materials.stream().anyMatch(m -> m.getDiffuseFilename().equals(filenameDiffuseFull))) {
+                        throw new RuntimeException("Material filename collision: " + filenameDiffuseFull);
+                    }
+                    materials.add(new Material(materialName, filenameDiffuseFull));
+
+                    materialName = null;
+                    filenameDiffuse = null;
                 }
-                materials.add(new Material(materialName, filenameDiffuseFull));
-
-                materialName = null;
-                filenameDiffuse = null;
             }
+            sr.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        sr.close();
     }
 }
