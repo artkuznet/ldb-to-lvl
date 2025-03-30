@@ -1,5 +1,7 @@
 package com.artkuznet.converter.maxed;
 
+import java.util.stream.Collectors;
+
 public class LvlMaterial {
 
     public static class MaterialBitmap {

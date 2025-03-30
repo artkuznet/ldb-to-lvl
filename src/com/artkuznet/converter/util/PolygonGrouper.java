@@ -1,5 +1,6 @@
 package com.artkuznet.converter.util;
 
+import com.artkuznet.converter.Options;
 import com.artkuznet.converter.Vector3D;
 import com.artkuznet.converter.ldb.vertex.VertexUV;
 import com.artkuznet.converter.maxed.LvlPolygon;
@@ -11,7 +12,7 @@ import java.util.stream.Collectors;
 
 public class PolygonGrouper {
 
-    private static final double EPSILON = 1e-6;
+    private static final double EPSILON = 1e-3;
 
     public static List<List<VertexPolygon>> groupPolygons(List<VertexPolygon> vertexPolygons) {
         return vertexPolygons.stream()
@@ -27,6 +28,10 @@ public class PolygonGrouper {
     }
 
     private static List<List<VertexPolygon>> split(List<VertexPolygon> vertexPolygons) {
+        if (Options.getInstance().skipJoinPolygons) {
+            return vertexPolygons.stream().map(Arrays::asList).collect(Collectors.toList());
+        }
+
         List<List<VertexEdge>> contours = ContourFinder.findContours(vertexPolygons);
 
         if (contours.size() == 1) {

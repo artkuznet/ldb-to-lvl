@@ -2,7 +2,58 @@ package com.artkuznet.converter.ldb.material;
 
 import com.artkuznet.converter.ldb.texture.Texture;
 
+import java.util.Arrays;
+
 public class Material {
+
+    private static String[] CATEGORIES = {
+            "ai_node_collision_nodraw",
+            "cameracollision",
+            "cardboard",
+            "carpet",
+            "character",
+            "charactercollision_nodraw",
+            "couch",
+            "default",
+            "drape",
+            "dummy",
+            "electricpanel",
+            "externalwall",
+            "flesh",
+            "glass",
+            "glass_bulletproof",
+            "graffiti",
+            "gravel",
+            "laser",
+            "leaves",
+            "lights",
+            "marble",
+            "metal",
+            "metal_hollow",
+            "metal_outside",
+            "metal_solid",
+            "mirror",
+            "nocollision",
+            "nodecals",
+            "paper",
+            "pipes",
+            "pipes_steam",
+            "plastic",
+            "rock",
+            "skybox",
+            "snow",
+            "sortmaterial_high",
+            "sortmaterial_medium",
+            "stucco",
+            "tile",
+            "water",
+            "water_bottom",
+            "watertank",
+            "winebarrel",
+            "wireframe",
+            "wood",
+            "woodframe",
+    };
 
     private int idx;
 
@@ -23,6 +74,21 @@ public class Material {
         this.id = id;
         this.categoryName = categoryName;
         this.materialName = materialName;
+    }
+
+    // todo refactor
+    public static String extractCategoryName(String materialName) {
+        String[] categoriesSorted = CATEGORIES.clone();
+
+        Arrays.sort(categoriesSorted, (a, b) -> Integer.compare(b.length(), a.length()));
+
+        for (String category : categoriesSorted) {
+            if (materialName.toLowerCase().startsWith(category.toLowerCase())) {
+                return category;
+            }
+        }
+
+        return "default";
     }
 
     public int getIdx() {

@@ -102,10 +102,6 @@ public class Mesh extends MaxObject {
     }
 
     public Mesh joinPolygons() {
-        if (Options.getInstance().skipJoinPolygons) {
-            return this;
-        }
-
         for (LvlPolygon polygon : polygons) {
             polygon.calculateTriangles();
         }
@@ -120,13 +116,13 @@ public class Mesh extends MaxObject {
                     vPolygon.index = lvlPolygon.index;
                     vPolygon.materialName = lvlPolygon.getMaterialName();
                     vPolygon.bitmapName = lvlPolygon.getBitmapName();
-                    vPolygon.normal = lvlPolygon.getNormal().clone().softSmooth();
+                    vPolygon.normal = lvlPolygon.getNormal().clone();
                     vPolygon.uvNormal = Vector3D.calculateNormal(
                             Vector3D.findTriangle(lvlPolygon.UV.stream()
                                     .map(Vector3D::new)
                                     .collect(Collectors.toList())
                             )
-                    ).softSmooth();
+                    );
 
                     vPolygon.edges = new ArrayList<>();
 

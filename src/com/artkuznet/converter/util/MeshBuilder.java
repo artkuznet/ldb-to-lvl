@@ -75,11 +75,11 @@ public class MeshBuilder {
     }
 
     private static boolean areNormalsCollinearAndOpposite(Vector3D n1, Vector3D n2) {
-        if (crossProduct(n1, n2).magnitude() > 1e-6) {
+        if (crossProduct(n1, n2).magnitude() > 1e-8) {
             return false;
         }
 
-        return dotProduct(n1, n2) < -1e-6;
+        return dotProduct(n1, n2) < -1e-8;
     }
 
     private static Vector3D crossProduct(Vector3D a, Vector3D b) {

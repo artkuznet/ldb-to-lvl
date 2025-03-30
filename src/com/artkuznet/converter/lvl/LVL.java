@@ -10,12 +10,18 @@ import com.artkuznet.converter.ldb.polygon.Geometry;
 import com.artkuznet.converter.ldb.polygon.Polygon;
 import com.artkuznet.converter.ldb.staticmesh.StaticMesh;
 import com.artkuznet.converter.ldb.vertex.Vertex;
+import com.artkuznet.converter.ldb.vertex.VertexUV;
 import com.artkuznet.converter.mapper.DynamicDataMapper;
 import com.artkuznet.converter.mapper.FsmDataMapper;
 import com.artkuznet.converter.maxed.*;
+import com.artkuznet.converter.obj.MTL;
+import com.artkuznet.converter.obj.OBJ;
 import com.artkuznet.converter.util.MeshBuilder;
 import com.artkuznet.converter.util.TgaParser;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -92,13 +98,126 @@ public class LVL {
             (byte) 0x00, (byte) 0x00
     };
 
+    public LVL(OBJ obj) {
+        Map<String, List<LvlMaterial.MaterialBitmap>> materialTextures = new HashMap<>();
+
+        for (MTL.Material mtlMaterial : obj.getMTL().getMaterials()) {
+            final byte[] bitmapData;
+            try {
+                bitmapData = Files.readAllBytes(Paths.get(mtlMaterial.getDiffuseFilename()));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            Bitmap bitmap = new Bitmap(mtlMaterial.getName(), bitmapData);
+            LvlMaterial.MaterialBitmap texture = new LvlMaterial.MaterialBitmap(
+                    mtlMaterial.getName(),
+                    mtlMaterial.getName(),
+                    0,
+                    false,
+                    false,
+                    false
+            );
+
+            String categoryName = Material.extractCategoryName(mtlMaterial.getName());
+
+            if (!materialTextures.containsKey(categoryName)) {
+                materialTextures.put(categoryName, new ArrayList<>());
+            }
+
+            materialTextures.get(categoryName).add(texture);
+
+            bitmaps.add(bitmap);
+        }
+
+        for (String materialCategory : materialTextures.keySet()) {
+            materials.add(new LvlMaterial(
+                    materialCategory,
+                    materialTextures.get(materialCategory).toArray(new LvlMaterial.MaterialBitmap[0])
+            ));
+        }
+
+        Map<String, String> textureMaterials = new HashMap<>();
+        materialTextures.forEach((key, value) -> value.forEach(materialBitmap -> textureMaterials.put(materialBitmap.getName(), key)));
+
+        List<Mesh> meshes = obj.getObjects().stream()
+                .map(object3D -> {
+
+                    System.out.printf("✅ %s%n", object3D.getName());
+
+                    Mesh mesh = new Mesh();
+
+                    List<Vector3D> objectVertices = object3D.getVertices().stream()
+                            .map(v -> new Vector3D(v.getX(), v.getY(), -v.getZ()))
+                            .collect(Collectors.toList());
+
+                    mesh.setName(object3D.getName());
+                    mesh.setFlipFaces(false);
+                    mesh.setVertices(objectVertices.toArray(new Vector3D[0]));
+
+                    int minVertexIndex = object3D.getMinVertexIndex();
+
+                    mesh.setPolygons(object3D.getFaces().stream()
+                            .map(face -> {
+
+                                LvlPolygon.Edge[] edges = new LvlPolygon.Edge[face.getVertices().size()];
+                                for (int i = 0; i < edges.length; i++) {
+                                    int from = face.getVertices().get(i).getIndex() - minVertexIndex;
+                                    int to = face.getVertices().get((1 + i) % edges.length).getIndex() - minVertexIndex;
+                                    edges[i] = new LvlPolygon.Edge(from, to);
+                                }
+
+                                Vector3D normal = Vector3D.calculateNormal(
+                                        Vector3D.findTriangle(
+                                                Arrays.stream(edges)
+                                                        .map(LvlPolygon.Edge::getFrom)
+                                                        .map(objectVertices::get)
+                                                        .collect(Collectors.toList())
+                                        )
+                                );
+
+                                LvlPolygon.Triangle triangle = new LvlPolygon.Triangle();
+                                triangle.normal = normal;
+                                triangle.vertices = Arrays.stream(edges).map(LvlPolygon.Edge::getFrom).collect(Collectors.toList());
+
+                                LvlPolygon polygon = new LvlPolygon(
+                                        edges,
+                                        textureMaterials.getOrDefault(face.getMaterialName(), "default"),
+                                        face.getMaterialName(),
+                                        normal
+                                );
+
+                                polygon.index = ++polygonCounter;
+
+                                polygon.setTriangles(Collections.singletonList(triangle));
+
+                                polygon.UV = face.getUV().stream()
+                                        .map(uv -> new VertexUV((float) uv.getU(), (float) uv.getV()))
+                                        .collect(Collectors.toList());
+
+
+                                polygon.textureOffset = new double[]{polygon.UV.get(0).getU(), polygon.UV.get(0).getV()};
+                                polygon.setUnkVertex(objectVertices.get(edges[0].getFrom()));
+                                polygon.unkVector1 = polygon.getDefaultUnk5();
+
+                                polygon.parentMesh = mesh;
+
+                                polygon.calculateTextureSpace(objectVertices);
+
+                                return polygon;
+                            }).toArray(LvlPolygon[]::new));
+
+                    return mesh.optimize().joinPolygons();
+                }).collect(Collectors.toList());
+
+        objects.addAll(meshes);
+    }
+
     public LVL(MaxLDB ldb) {
         bitmaps = ldb.getTextures()
                 .getList().stream()
                 .map(texture -> new Bitmap(texture.getFilePath(), texture.getFileType(), texture.getData()))
                 .collect(Collectors.toList());
-
-        materials = new ArrayList<>();
 
         ldb.getMaterials().getList().stream()
                 .collect(Collectors.groupingBy(Material::getCategoryName))
@@ -249,11 +368,9 @@ public class LVL {
 
             String roomName = room.getName().replaceFirst("::", "");
 
-            System.out.println("Room: " + roomName);
-
+            System.out.printf("✅ %s%n", roomName);
 
             List<List<LvlPolygon>> groups = MeshBuilder.groupPolygons(lvlPolygons, lvlVertexList);
-
 
             List<LvlPolygon> largestMesh = groups.stream()
                     .max(Comparator.comparingDouble(o -> o.stream()
@@ -695,9 +812,9 @@ public class LVL {
         }
     }
 
-    private List<Bitmap> bitmaps;
+    private List<Bitmap> bitmaps = new ArrayList<>();
 
-    private List<LvlMaterial> materials;
+    private List<LvlMaterial> materials = new ArrayList<>();
 
     private List<MaxObject> objects = new ArrayList<>();
 
