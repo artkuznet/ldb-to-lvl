@@ -41,6 +41,6 @@ java -jar ldb-to-lvl.jar FireExtinguisher.obj
 
 * [CardboardBox](https://github.com/artkuznet/ldb-to-lvl/raw/refs/heads/dev/docs/example/CardboardBox.zip)
 * [FireExtinguisher](https://github.com/artkuznet/ldb-to-lvl/raw/refs/heads/dev/docs/example/FireExtinguisher.zip)
-* [Objects](https://github.com/artkuznet/ldb-to-lvl/raw/refs/heads/dev/docs/example/FireExtinguisher.zip)
+* [Objects](https://github.com/artkuznet/ldb-to-lvl/raw/refs/heads/dev/docs/example/Objects.zip)
 
 See also [Max Payne 1 and Max Payne 2 LDB Importer plugin for Maya](https://github.com/m0nstr0/max_payne_ldb_importer) by [m0nstr0](https://github.com/m0nstr0)
