@@ -38,7 +38,7 @@ public class Main {
             }
         }
 
-        Out.println("Done%n", Out.Color.GREEN);
+        Out.println("Done", Out.Color.GREEN);
     }
 
     private static void saveLvl(String filename, LVL lvl) {
