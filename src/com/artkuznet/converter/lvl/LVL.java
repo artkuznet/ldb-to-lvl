@@ -17,6 +17,7 @@ import com.artkuznet.converter.maxed.*;
 import com.artkuznet.converter.obj.MTL;
 import com.artkuznet.converter.obj.OBJ;
 import com.artkuznet.converter.util.MeshBuilder;
+import com.artkuznet.converter.util.MeshJoiner;
 import com.artkuznet.converter.util.TgaParser;
 
 import java.io.IOException;
@@ -396,7 +397,7 @@ public class LVL {
                     .filter(polygons -> polygons.stream().noneMatch(emptyRoom::contains))
                     .collect(Collectors.toList());
 
-            List<MaxObject> childs = new ArrayList<>();
+            List<Mesh> childMeshes = new ArrayList<>();
 
             for (List<LvlPolygon> m : meshes) {
                 Mesh childMesh = new Mesh();
@@ -407,8 +408,35 @@ public class LVL {
                 childMesh.setPolygons(m.toArray(new LvlPolygon[0]));
                 childMesh.setPolyGroups(new PolyGroup[]{});
 
-                childs.add(childMesh.optimize().joinPolygons().buildPolyGroups());
+                childMeshes.add(childMesh);
             }
+
+            List<MaxObject> childs = MeshJoiner.joinMeshes(childMeshes).stream()
+                    .map(m -> {
+                        Mesh mesh = m.stream()
+                                .max(Comparator.comparingDouble(o -> Arrays.stream(o.getPolygons())
+                                                .map(LvlPolygon::getArea)
+                                                .reduce(Double::sum)
+                                                .orElseThrow(null)
+                                        )
+                                ).orElseThrow(null);
+
+                        mesh.setVertices(m.stream()
+                                .map(Mesh::getVertices)
+                                .map(a -> Arrays.stream(a).collect(Collectors.toList()))
+                                .flatMap(List::stream)
+                                .toArray(Vector3D[]::new)
+                        );
+
+                        mesh.setPolygons(m.stream()
+                                .map(Mesh::getPolygons)
+                                .map(a -> Arrays.stream(a).collect(Collectors.toList()))
+                                .flatMap(List::stream)
+                                .toArray(LvlPolygon[]::new)
+                        );
+
+                        return mesh.optimize().joinPolygons().buildPolyGroups();
+                    }).collect(Collectors.toList());
 
             List<DynamicMesh> dynamicMeshes = ldb.getDynamicMeshes().getList().stream()
                     .filter(d -> d.getRoomName().equals(room.getName()))

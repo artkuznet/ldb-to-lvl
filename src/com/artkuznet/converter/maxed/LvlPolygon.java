@@ -179,7 +179,7 @@ public class LvlPolygon {
     public double[] textureOffset;
 
     public double lightIntensity = 1.0;
-    public double lightmapResolution = 4.0;
+    public double lightmapResolution = 4.0; // todo param
     public short pointPolygonIndex = -1;
 
     public static class Triangle {
