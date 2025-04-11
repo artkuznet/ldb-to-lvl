@@ -487,9 +487,7 @@ public class LvlPolygon {
     }
 
     public Color getColor() {
-        if (color == null) {
-            calculateColor();
-        }
+        calculateColor();
 
         return color;
     }

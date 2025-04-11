@@ -188,6 +188,13 @@ public class Mesh extends MaxObject {
                             .collect(Collectors.toList())
             );
 
+            p1.setArea(lvlPolygonList.stream()
+                    .filter(p -> groupedIndices.contains(p.index))
+                    .map(LvlPolygon::getArea)
+                    .reduce(Double::sum)
+                    .orElseThrow(null)
+            );
+
             return p1;
         }).collect(Collectors.toList());
 
@@ -218,7 +225,9 @@ public class Mesh extends MaxObject {
 
                 pg.setName("New polygroup");
 
-                pg.setSmoothGeometry(true);
+                if (polyGroupId > 0) {
+                    pg.setSmoothGeometry(true);
+                }
                 pg.setSmoothLightMaps(true);
 
                 Float maxAngle = null;
