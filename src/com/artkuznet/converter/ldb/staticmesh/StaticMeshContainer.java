@@ -20,7 +20,7 @@ public class StaticMeshContainer {
     }
 
     public StaticMesh getById(int id) {
-        return staticMeshes.stream().filter(staticMesh -> staticMesh.getId() == id).findFirst().orElseThrow(null);
+        return staticMeshes.stream().filter(staticMesh -> staticMesh.getId() == id).findFirst().orElseThrow(RuntimeException::new);
     }
 
     public TextureVertexContainer getTextureVertices() {

@@ -76,7 +76,6 @@ public class Material {
         this.materialName = materialName;
     }
 
-    // todo refactor
     public static String extractCategoryName(String materialName) {
         String[] categoriesSorted = CATEGORIES.clone();
 

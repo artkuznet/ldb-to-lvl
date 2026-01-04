@@ -1,13 +1,28 @@
-package com.artkuznet.converter.ldb;
+package com.artkuznet.converter;
 
-import com.artkuznet.converter.Reader;
 import com.artkuznet.converter.ldb.vertex.Vertex;
 import com.artkuznet.converter.ldb.vertex.VertexUV;
 
 public final class MaxTypeReader extends Reader {
 
+    private int offsetControl;
+
+    public void rememberOffset() {
+        this.offsetControl = offset;
+    }
+
+    public void validateDataSize(int dataSize) {
+        if (offset - offsetControl != dataSize) {
+            throw new RuntimeException("Invalid data size");
+        }
+    }
+
     public MaxTypeReader(String fileName) {
         super(fileName);
+    }
+
+    public MaxTypeReader(byte[] data) {
+        super(data);
     }
 
     public Object readObject() {
@@ -16,10 +31,24 @@ public final class MaxTypeReader extends Reader {
         switch (type) {
             case 0x00:
                 return readInt();
+            case 0x01:
+                return readUInt(); // unsigned
             case 0x02:
                 return readInt();
             case 0x03:
                 return readUInt(); // unsigned
+            case 0x04:
+                return readShort();
+            case 0x05:
+                return readUShort(); // unsigned short
+            case 0x06:
+                return readByte();
+            case 0x07:
+                return readByte();
+            case 0x08:
+                return (int) readByte(); // unsigned char
+            case 0x0A:
+                return readDouble();
             case 0x0D:
                 return readObjectString();
             case 0x0E:
@@ -39,13 +68,17 @@ public final class MaxTypeReader extends Reader {
             case 0x14:
                 return (int) readByte();
             case 0x15:
-                return readVector2D();
+                return readVertex2D();
             case 0x16:
-                return readVector3D();
+                return readVertex3D();
             case 0x19:
                 return readMatrix3x3();
             case 0x1A:
                 return readMatrix4x3();
+            case 0x1C:
+                return readByte();
+            case 0x18:
+                return readByte();
             default:
                 throw new RuntimeException("readObject wrong type " + type);
         }
@@ -74,11 +107,11 @@ public final class MaxTypeReader extends Reader {
                 | this.readByte() << 16 & 0xffffff;
     }
 
-    private VertexUV readVector2D() {
+    private VertexUV readVertex2D() {
         return new VertexUV(readFloat(), readFloat());
     }
 
-    private Vertex readVector3D() {
+    private Vertex readVertex3D() {
         return new Vertex(readFloat(), readFloat(), readFloat());
     }
 

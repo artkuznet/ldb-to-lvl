@@ -12,6 +12,6 @@ public class ExitContainer {
     }
 
     public Exit findByName(String exitName) {
-        return exits.stream().filter(e -> e.getExitName().equals(exitName)).findFirst().orElseThrow(null);
+        return exits.stream().filter(e -> e.getExitName().equals(exitName)).findFirst().orElseThrow(RuntimeException::new);
     }
 }

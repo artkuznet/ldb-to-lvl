@@ -1,10 +1,7 @@
 package com.artkuznet.converter.maxed;
 
 import com.artkuznet.converter.Vector3D;
-import com.artkuznet.converter.util.ContourFinder;
-import com.artkuznet.converter.util.PolyGroupAssigner;
-import com.artkuznet.converter.util.PolygonGrouper;
-import com.artkuznet.converter.util.PolygonProcessor;
+import com.artkuznet.converter.util.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,7 +12,7 @@ public class Mesh extends MaxObject {
     private LvlPolygon[] polygons;
     private PolyGroup[] polyGroups = new PolyGroup[0];
 
-    private boolean isFlipFaces;
+    private boolean room = false;
 
     private float aiNetDensity = 1.0f;
 
@@ -36,16 +33,16 @@ public class Mesh extends MaxObject {
         return vertices;
     }
 
-    public boolean getFlipFaces() {
-        return isFlipFaces;
+    public boolean isRoom() {
+        return room;
     }
 
     public float getAiNetDensity() {
         return aiNetDensity;
     }
 
-    public void setFlipFaces(final boolean flipFaces) {
-        isFlipFaces = flipFaces;
+    public void setIsRoom(final boolean room) {
+        this.room = room;
     }
 
     public void setAiNetDensity(float aiNetDensity) {
@@ -102,6 +99,7 @@ public class Mesh extends MaxObject {
     }
 
     public Mesh joinPolygons() {
+
         for (LvlPolygon polygon : polygons) {
             polygon.calculateTriangles();
         }
@@ -166,9 +164,9 @@ public class Mesh extends MaxObject {
             LvlPolygon p1 = lvlPolygonList.stream()
                     .filter(p -> p.index == vPolygons.get(0).index)
                     .findAny()
-                    .orElseThrow(null);
+                    .orElseThrow(RuntimeException::new);
 
-            List<Short> groupedIndices = vPolygons.stream().map(vp -> vp.index).collect(Collectors.toList());
+            List<Integer> groupedIndices = vPolygons.stream().map(vp -> vp.index).collect(Collectors.toList());
 
             p1.setEdges(vEdges.stream()
                     .map(vertexEdge ->
@@ -178,7 +176,6 @@ public class Mesh extends MaxObject {
             );
 
             p1.UV = vEdges.stream().map(vertexEdge -> vertexEdge.uv1).collect(Collectors.toList());
-            // todo p1.lightmapUV
 
             p1.setTriangles(
                     lvlPolygonList.stream()
@@ -192,7 +189,7 @@ public class Mesh extends MaxObject {
                     .filter(p -> groupedIndices.contains(p.index))
                     .map(LvlPolygon::getArea)
                     .reduce(Double::sum)
-                    .orElseThrow(null)
+                    .orElseThrow(RuntimeException::new)
             );
 
             return p1;
@@ -293,14 +290,14 @@ public class Mesh extends MaxObject {
             object = object.parentObject;
         }
 
-        Double minX = transformVertices.stream().map(Vector3D::getX).min(Double::compareTo).orElseThrow(null);
-        Double maxX = transformVertices.stream().map(Vector3D::getX).max(Double::compareTo).orElseThrow(null);
+        Double minX = transformVertices.stream().map(Vector3D::getX).min(Double::compareTo).orElseThrow(RuntimeException::new);
+        Double maxX = transformVertices.stream().map(Vector3D::getX).max(Double::compareTo).orElseThrow(RuntimeException::new);
 
-        Double minY = transformVertices.stream().map(Vector3D::getY).min(Double::compareTo).orElseThrow(null);
-        Double maxY = transformVertices.stream().map(Vector3D::getY).max(Double::compareTo).orElseThrow(null);
+        Double minY = transformVertices.stream().map(Vector3D::getY).min(Double::compareTo).orElseThrow(RuntimeException::new);
+        Double maxY = transformVertices.stream().map(Vector3D::getY).max(Double::compareTo).orElseThrow(RuntimeException::new);
 
-        Double minZ = transformVertices.stream().map(Vector3D::getZ).min(Double::compareTo).orElseThrow(null);
-        Double maxZ = transformVertices.stream().map(Vector3D::getZ).max(Double::compareTo).orElseThrow(null);
+        Double minZ = transformVertices.stream().map(Vector3D::getZ).min(Double::compareTo).orElseThrow(RuntimeException::new);
+        Double maxZ = transformVertices.stream().map(Vector3D::getZ).max(Double::compareTo).orElseThrow(RuntimeException::new);
 
         Vector3D min = new Vector3D(minX, minY, minZ);
         Vector3D max = new Vector3D(maxX, maxY, maxZ);

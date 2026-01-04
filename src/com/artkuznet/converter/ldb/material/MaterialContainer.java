@@ -29,6 +29,6 @@ public class MaterialContainer {
         return materials.stream()
                 .filter(material -> material.getIdx() == idx)
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Material not found with index " + idx));
+                .orElseThrow(() -> new RuntimeException("LdbMaterial not found with index " + idx));
     }
 }

@@ -13,6 +13,7 @@ import com.artkuznet.converter.ldb.vertex.Vertex;
 import com.artkuznet.converter.ldb.vertex.VertexUV;
 import com.artkuznet.converter.mapper.DynamicDataMapper;
 import com.artkuznet.converter.mapper.FsmDataMapper;
+import com.artkuznet.converter.mapper.Object3DMapper;
 import com.artkuznet.converter.maxed.*;
 import com.artkuznet.converter.obj.MTL;
 import com.artkuznet.converter.obj.OBJ;
@@ -141,77 +142,7 @@ public class LVL {
         Map<String, String> textureMaterials = new HashMap<>();
         materialTextures.forEach((key, value) -> value.forEach(materialBitmap -> textureMaterials.put(materialBitmap.getName(), key)));
 
-        List<Mesh> meshes = obj.getObjects().stream()
-                .map(object3D -> {
-
-                    System.out.printf("+ %s%n", object3D.getName());
-
-                    Mesh mesh = new Mesh();
-
-                    List<Vector3D> objectVertices = object3D.getVertices().stream()
-                            .map(v -> new Vector3D(v.getX(), v.getY(), -v.getZ()))
-                            .collect(Collectors.toList());
-
-                    mesh.setName(object3D.getName());
-                    mesh.setFlipFaces(false);
-                    mesh.setVertices(objectVertices.toArray(new Vector3D[0]));
-
-                    int minVertexIndex = object3D.getMinVertexIndex();
-
-                    mesh.setPolygons(object3D.getFaces().stream()
-                            .map(face -> {
-
-                                LvlPolygon.Edge[] edges = new LvlPolygon.Edge[face.getVertices().size()];
-                                for (int i = 0; i < edges.length; i++) {
-                                    int from = face.getVertices().get(i).getIndex() - minVertexIndex;
-                                    int to = face.getVertices().get((1 + i) % edges.length).getIndex() - minVertexIndex;
-                                    edges[i] = new LvlPolygon.Edge(from, to);
-                                }
-
-                                Vector3D normal = Vector3D.calculateNormal(
-                                        Vector3D.findTriangle(
-                                                Arrays.stream(edges)
-                                                        .map(LvlPolygon.Edge::getFrom)
-                                                        .map(objectVertices::get)
-                                                        .collect(Collectors.toList())
-                                        )
-                                );
-
-                                LvlPolygon.Triangle triangle = new LvlPolygon.Triangle();
-                                triangle.normal = normal;
-                                triangle.vertices = Arrays.stream(edges).map(LvlPolygon.Edge::getFrom).collect(Collectors.toList());
-
-                                LvlPolygon polygon = new LvlPolygon(
-                                        edges,
-                                        textureMaterials.getOrDefault(face.getMaterialName(), "default"),
-                                        face.getMaterialName(),
-                                        normal
-                                );
-
-                                polygon.index = ++polygonCounter;
-
-                                polygon.setTriangles(Collections.singletonList(triangle));
-
-                                polygon.UV = face.getUV().stream()
-                                        .map(uv -> new VertexUV((float) uv.getU(), (float) uv.getV()))
-                                        .collect(Collectors.toList());
-
-
-                                polygon.textureOffset = new double[]{polygon.UV.get(0).getU(), polygon.UV.get(0).getV()};
-                                polygon.setUnkVertex(objectVertices.get(edges[0].getFrom()));
-                                polygon.unkVector1 = polygon.getDefaultUnk5();
-
-                                polygon.parentMesh = mesh;
-
-                                polygon.calculateTextureSpace(objectVertices);
-
-                                return polygon;
-                            }).toArray(LvlPolygon[]::new));
-
-                    return mesh.optimize().joinPolygons().buildPolyGroups();
-                }).collect(Collectors.toList());
-
-        objects.addAll(meshes);
+        objects.addAll(Object3DMapper.convert(obj, textureMaterials));
     }
 
     public LVL(MaxLDB ldb) {
@@ -250,7 +181,7 @@ public class LVL {
         Set<TgaParser.TgaImage> lightmapTgaList = new HashSet<>();
 
         List<Mesh> rooms = ldb.getRooms().getList().stream().map(room -> {
-            Integer staticMeshId = room.getStaticMeshes().stream().findFirst().orElseThrow(null);
+            Integer staticMeshId = room.getStaticMeshes().stream().findFirst().orElseThrow(RuntimeException::new);
             StaticMesh roomMesh = ldb.getStaticMeshes().getById(staticMeshId);
 
             int roomMeshPolygonsCount = roomMesh.getPolygons().getList().size();
@@ -315,7 +246,7 @@ public class LVL {
                     lightmapTgaList.add(TgaParser.parse(geometryPolygon.getLightmap().getId(), geometryPolygon.getLightmap().getData()));
                 }
 
-                poly.lightmapTga = lightmapTgaList.stream().filter(tga -> tga.getLightmapId() == geometryPolygon.getLightmap().getId()).findFirst().orElseThrow(null);
+                poly.lightmapTga = lightmapTgaList.stream().filter(tga -> tga.getLightmapId() == geometryPolygon.getLightmap().getId()).findFirst().orElseThrow(RuntimeException::new);
                 poly.lightmapUV = geometry.getLightmapUv();
 
                 poly.calculateTextureSpace(lvlVertexList);
@@ -377,9 +308,9 @@ public class LVL {
                     .max(Comparator.comparingDouble(o -> o.stream()
                             .map(LvlPolygon::getArea)
                             .reduce(Double::sum)
-                            .orElseThrow(null))
+                            .orElseThrow(RuntimeException::new))
                     )
-                    .orElseThrow(null);
+                    .orElseThrow(RuntimeException::new);
 
             List<List<LvlPolygon>> exitMeshes = groups.stream()
                     .filter(polygons -> polygons.stream().anyMatch(p -> p instanceof LvlExit))
@@ -403,7 +334,7 @@ public class LVL {
                 Mesh childMesh = new Mesh();
 
                 childMesh.setName("Mesh_" + (++meshCounter[0]));
-                childMesh.setFlipFaces(false);
+                childMesh.setIsRoom(false);
                 childMesh.setVertices(lvlVertexList.toArray(new Vector3D[0]));
                 childMesh.setPolygons(m.toArray(new LvlPolygon[0]));
                 childMesh.setPolyGroups(new PolyGroup[]{});
@@ -417,9 +348,9 @@ public class LVL {
                                 .max(Comparator.comparingDouble(o -> Arrays.stream(o.getPolygons())
                                                 .map(LvlPolygon::getArea)
                                                 .reduce(Double::sum)
-                                                .orElseThrow(null)
+                                                .orElseThrow(RuntimeException::new)
                                         )
-                                ).orElseThrow(null);
+                                ).orElseThrow(RuntimeException::new);
 
                         mesh.setVertices(m.stream()
                                 .map(Mesh::getVertices)
@@ -525,11 +456,10 @@ public class LVL {
 
                         dynamic.setName(ldbDynamicMesh.getShortName());
 
-                        dynamic.setFlipFaces(false);
+                        dynamic.setIsRoom(false);
 
                         dynamic.setVertices(lvlVertexList.toArray(new Vector3D[0]));
                         dynamic.setPolygons(dynamicPolygons.toArray(new LvlPolygon[0]));
-                        dynamic.setTransform(ldbDynamicMesh.getTransformDouble());
 
                         dynamic.parentName = ldbDynamicMesh.getProperties().getParentDynamicMeshName();
                         dynamic.fullName = ldbDynamicMesh.getSharedName();
@@ -676,7 +606,7 @@ public class LVL {
 
             mesh.setName(roomName);
             mesh.setAiNetDensity(room.getAiNetDensity());
-            mesh.setFlipFaces(true);
+            mesh.setIsRoom(true);
             mesh.setVertices(lvlVertexList.toArray(new Vector3D[0]));
             mesh.setPolygons(emptyRoom.toArray(new LvlPolygon[0]));
             mesh.setTransform(roomMesh.getTransformDouble());
@@ -728,7 +658,7 @@ public class LVL {
                         .flatMap(Arrays::stream)
                         .filter(p -> p instanceof LvlExit)
                         .map(p -> (LvlExit) p)
-                        .filter(e -> e.exitName.equals(exit.linkedExitName))
+                        .filter(e -> e.exitName.equalsIgnoreCase(exit.linkedExitName))
                         .findFirst().orElse(null);
 
                 if (linkedExit == null) {
@@ -951,7 +881,7 @@ public class LVL {
         }
 
         if (object instanceof Mesh) {
-            data.add((byte) (((Mesh) object).getFlipFaces() ? 0 : 1));
+            data.add((byte) (((Mesh) object).isRoom() ? 0 : 1));
 
             data.addAll(toBytes(new byte[]{0, 0, 0, 0, 0, 0, 0}));
 
@@ -991,7 +921,7 @@ public class LVL {
 
                 if (polygon instanceof LvlExit) {
                     data.addAll(toBytes(4));
-                    data.addAll(toBytes(polygon.pointPolygonIndex));
+                    data.addAll(toBytes((short) polygon.pointPolygonIndex));
                 } else {
                     data.addAll(toBytes(0));
                     data.addAll(toBytes((short) -1));
@@ -1388,10 +1318,10 @@ public class LVL {
             data.addAll(toDynamicBytes(animation.startKeyframe));
             data.addAll(toDynamicBytes(animation.endKeyframe));
 
-            Float rMin = animation.rotation.points.stream().min(Float::compareTo).orElseThrow(null);
-            Float rMax = animation.rotation.points.stream().max(Float::compareTo).orElseThrow(null);
-            Float pMin = animation.position.points.stream().min(Float::compareTo).orElseThrow(null);
-            Float pMax = animation.position.points.stream().max(Float::compareTo).orElseThrow(null);
+            Float rMin = animation.rotation.points.stream().min(Float::compareTo).orElseThrow(RuntimeException::new);
+            Float rMax = animation.rotation.points.stream().max(Float::compareTo).orElseThrow(RuntimeException::new);
+            Float pMin = animation.position.points.stream().min(Float::compareTo).orElseThrow(RuntimeException::new);
+            Float pMax = animation.position.points.stream().max(Float::compareTo).orElseThrow(RuntimeException::new);
 
             data.addAll(toDynamicAnimation("Position", animation.position, rMin, rMax, pMin, pMax, animation.unkByte1, animation.unkByte2));
             data.addAll(toDynamicAnimation("Rotation", animation.rotation, 0f, 1f, 0f, 1f, animation.unkByte3, animation.unkByte4));

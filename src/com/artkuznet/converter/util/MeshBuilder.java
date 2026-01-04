@@ -145,7 +145,7 @@ public class MeshBuilder {
         }
 
         return orderedIndices.stream()
-                .map(index -> vertexList.get(index))
+                .map(vertexList::get)
                 .collect(Collectors.toList());
     }
 
