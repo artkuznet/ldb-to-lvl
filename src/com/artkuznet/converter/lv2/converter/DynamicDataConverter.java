@@ -22,11 +22,6 @@ public class DynamicDataConverter {
 
         getAllKeyframes(mesh.getLocalMatrix(), roomPosition, dynamicMeshAnimations).forEach(dynamic::addKeyframe);
 
-//        String firstKeyframeName = dynamic.getKeyframes().get(0).getName();
-//        dynamic.setGotoKeyframe(firstKeyframeName);
-//        dynamic.setDefaultKeyframe(firstKeyframeName); // todo ?
-//        dynamic.setLightingKeyframe(firstKeyframeName);
-
         dynamicMeshAnimations.stream().map(a -> convert(a, dynamic.getKeyframes(), roomPosition)).forEach(dynamic::addAnimation);
 
         List<double[][]> transforms = dynamic.getKeyframes().stream()

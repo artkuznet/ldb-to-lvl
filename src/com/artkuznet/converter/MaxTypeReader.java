@@ -11,6 +11,10 @@ public final class MaxTypeReader extends Reader {
         this.offsetControl = offset;
     }
 
+    public int getOffset() {
+        return offset;
+    }
+
     public void validateDataSize(int dataSize) {
         if (offset - offsetControl != dataSize) {
             throw new RuntimeException("Invalid data size");

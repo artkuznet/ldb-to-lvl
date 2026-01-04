@@ -399,6 +399,7 @@ public class RoomConverter {
                             true
                     );
 
+                    // todo fix parent position
                     dMesh.setDynamicData(DynamicDataConverter.convert(dMesh, fsm.getParent() == -1 ? roomPosition : new Vector3D(0, 0, 0), dynamicMesh.getAnimations()/*, fsm*/));
 
                     dMesh.getProperties().setPhysicalMaterial(PhysicalMaterial.values()[dynamicMesh.getPhysicalMaterial()].toString().toLowerCase());
@@ -432,7 +433,7 @@ public class RoomConverter {
                                         return lv2Mesh;
                                     }
                             )
-                            .filter(collisionMesh -> !new HashSet<>(collisionMesh.getVertices()).containsAll(dMesh.getVertices()))
+                            .filter(collisionMesh -> !dMesh.isClosed() || !new HashSet<>(collisionMesh.getVertices()).containsAll(dMesh.getVertices()))
                             .peek(collisionMesh -> {
                                         collisionMesh.getProperties().setCastNoShadows(true);
                                         collisionMesh.getProperties().setDoNotRender(true);
@@ -443,9 +444,8 @@ public class RoomConverter {
                                 dMesh.addChildEntity(collisionMesh);
                             });
 
-                    if (dynamicMesh.isShareCollision() || (
-                            dMesh.getChildEntities().stream().noneMatch(e -> e.getClass().equals(Mesh.class))
-                                    && !dynamicMesh.getCollision().isEmpty())
+                    if (dMesh.getChildEntities().stream().noneMatch(e -> e.getClass().equals(Mesh.class))
+                            && !dynamicMesh.getCollision().isEmpty()
                     ) {
                         dMesh.getProperties().setGenerateConvexHull(true);
 

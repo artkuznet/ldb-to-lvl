@@ -58,6 +58,10 @@ public class Polygon {
 
             return otherEdge.from == from && otherEdge.to == to;
         }
+
+        public Edge normalize() {
+            return to > from ? this : new Edge(to, from);
+        }
     }
 
     public static class Triangle {

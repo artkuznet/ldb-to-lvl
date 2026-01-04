@@ -6,6 +6,7 @@ import com.artkuznet.converter.maxed2.entity.Entity;
 import com.artkuznet.converter.util.ChecksumGenerator;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Mesh extends Entity {
@@ -169,5 +170,14 @@ public class Mesh extends Entity {
                 .sorted(Integer::compareTo)
                 .map(Object::toString)
                 .collect(Collectors.joining(";")));
+    }
+
+    public boolean isClosed() {
+        return polygons.stream()
+                .map(Polygon::getEdges)
+                .flatMap(List::stream)
+                .map(Polygon.Edge::normalize)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .values().stream().allMatch(v -> 2 == v);
     }
 }
