@@ -37,6 +37,13 @@ java -jar ldb-to-lvl.jar FireExtinguisher.obj
 ```
 ![](docs/img/3.jpg)
 
+Use the `--lv2` flag to save the file in .lv2 format for MaxED2.
+
+```
+java -jar ldb-to-lvl.jar objects.obj --lv2
+```
+![](docs/img/4.jpg)
+
 ### OBJ examples:
 
 * [CardboardBox](https://github.com/artkuznet/ldb-to-lvl/raw/refs/heads/dev/docs/example/CardboardBox.zip)
