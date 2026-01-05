@@ -171,6 +171,10 @@ public class OBJ {
         return mtl;
     }
 
+    public OBJ() {
+
+    }
+
     public OBJ(String filename) {
         try {
             BufferedReader sr = new BufferedReader(new FileReader(filename));
