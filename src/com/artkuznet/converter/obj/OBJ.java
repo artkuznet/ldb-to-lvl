@@ -16,6 +16,7 @@ public class OBJ {
 
     private static final String MTLLIB = "mtllib";
     private static final String O = "o";
+    private static final String G = "g";
     private static final String V = "v";
     private static final String VN = "vn";
     private static final String VT = "vt";
@@ -24,7 +25,7 @@ public class OBJ {
     private static final String ERROR_MSG = "Unable to parse obj file";
 
     public static class Object3D {
-        private String name;
+        private String name = "object";
         private List<Vector3D> vertices = new ArrayList<>();
         private List<Vector3D> normals = new ArrayList<>();
         private List<UV> uv = new ArrayList<>();
@@ -221,7 +222,7 @@ public class OBJ {
                     materialName = line.substring(USEMTL.length()).trim();
                 }
 
-                if (line.startsWith(O + " ")) {
+                if (line.startsWith(O + " ") || line.startsWith(G + " ")) {
                     if (objectName != null) {
                         objects.add(o);
                         o = new Object3D();
