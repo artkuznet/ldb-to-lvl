@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 public class OBJ {
     private MTL mtl;
@@ -171,6 +172,10 @@ public class OBJ {
         return mtl;
     }
 
+    public void addObject3D(Object3D object3D) {
+        objects.add(object3D);
+    }
+
     public OBJ() {
 
     }
@@ -262,6 +267,64 @@ public class OBJ {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public String asText() {
+        int vertexOffset = 0;
+        int uvOffset = 0;
+
+        StringBuilder sb = new StringBuilder();
+
+        for (Object3D object3D : objects) {
+            sb.append(O + " ").append(object3D.name).append("\r\n");
+            for (Vector3D vertex : object3D.vertices) {
+                sb.append(V + " ");
+                sb.append(" ").append(formatDouble(vertex.getX()));
+                sb.append(" ").append(formatDouble(vertex.getY()));
+                sb.append(" ").append(formatDouble(-vertex.getZ()));
+                sb.append("\r\n");
+            }
+
+            for (UV uv : object3D.uv) {
+                sb.append(VT + " ");
+                sb.append(" ").append(formatDouble(uv.getU()));
+                sb.append(" ").append(formatDouble(uv.getV()));
+                sb.append("\r\n");
+            }
+
+            for (Vector3D vertex : object3D.normals) {
+                sb.append(VN + " ");
+                sb.append(" ").append(formatDouble(vertex.getX()));
+                sb.append(" ").append(formatDouble(vertex.getY()));
+                sb.append(" ").append(formatDouble(vertex.getZ()));
+                sb.append("\r\n");
+            }
+
+            String currentMaterialName = null;
+
+            for (Face face : object3D.faces) {
+                if (!Objects.equals(currentMaterialName, face.getMaterialName())) {
+                    sb.append(USEMTL + " ").append(face.getMaterialName()).append("\r\n");
+                    currentMaterialName = face.getMaterialName();
+                }
+                sb.append(F + " ");
+                for (Face.Vertex vertex : face.getVertices()) {
+                    sb.append(" ").append(vertex.getIndex() + vertexOffset);
+                    sb.append("/").append(vertex.getUvIndex() + uvOffset);
+                }
+                sb.append("\r\n");
+            }
+
+            vertexOffset += object3D.vertices.size();
+            uvOffset += object3D.uv.size();
+        }
+
+        return sb.toString();
+
+    }
+
+    private static String formatDouble(double d) {
+        return String.format("%.6f", d).replace(",", ".");
     }
 
     private static double toDouble(String value) {

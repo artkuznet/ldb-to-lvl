@@ -9,6 +9,7 @@ public final class Options {
 
     public boolean skipJoinPolygons = false;
     public boolean saveAsLv2 = false;
+    public boolean saveAsObj = false;
 
     public static Options getInstance() {
         if (INSTANCE == null) {

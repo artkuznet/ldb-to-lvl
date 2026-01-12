@@ -23,7 +23,7 @@ public class LdbTriangleDTO {
 
     private boolean convex = false;
 
-    private boolean dynamicMesh = false;
+//    private boolean dynamicMesh = false;
 
     private List<Vector3D> vertices;
 
@@ -35,7 +35,7 @@ public class LdbTriangleDTO {
 
     public List<VertexUV> uv;
 
-    private Integer meshId;
+//    private Integer meshId;
 
 //    private Integer collisionId;
 
@@ -56,13 +56,13 @@ public class LdbTriangleDTO {
         return area;
     }
 
-    public boolean isDynamicMesh() {
-        return dynamicMesh;
-    }
+//    public boolean isDynamicMesh() {
+//        return dynamicMesh;
+//    }
 
-    public void setDynamicMesh() {
-        dynamicMesh = true;
-    }
+//    public void setDynamicMesh() {
+//        dynamicMesh = true;
+//    }
 
     public void setConvex() {
         convex = true;
@@ -127,9 +127,9 @@ public class LdbTriangleDTO {
         ;
     }
 
-    public void setMeshId(Integer meshId) {
-        this.meshId = meshId;
-    }
+//    public void setMeshId(Integer meshId) {
+//        this.meshId = meshId;
+//    }
 
 //    public void setCollisionId(Integer collisionId) {
 //        this.collisionId = collisionId;
@@ -159,9 +159,9 @@ public class LdbTriangleDTO {
         return vertices;
     }
 
-    public Integer getMeshId() {
-        return meshId;
-    }
+//    public Integer getMeshId() {
+//        return meshId;
+//    }
 
     public Vector3D getNormal() {
         return normal;

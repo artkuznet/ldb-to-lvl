@@ -1,10 +1,12 @@
 package com.artkuznet.converter;
 
 import com.artkuznet.converter.ldb.MaxLDBReader;
+import com.artkuznet.converter.ldb2.MaxLDBReader2;
 import com.artkuznet.converter.lv2.LV2;
 import com.artkuznet.converter.lv2.MaxLV2Writer;
 import com.artkuznet.converter.lvl.LVL;
 import com.artkuznet.converter.obj.OBJ;
+import com.artkuznet.converter.obj.converter.Ldb2Converter;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,9 +35,19 @@ public class Main {
             System.out.println("Save as lv2");
         }
 
+        if (Arrays.stream(args).anyMatch("--obj"::equalsIgnoreCase)) {
+            options.saveAsObj = true;
+            System.out.println("Save as obj");
+        }
+
         for (String filename : filenames) {
             if (filename.toLowerCase().endsWith(".ldb")) {
                 System.out.printf("Read LDB file: \"%s\"%n", filename);
+                if (options.saveAsObj) {
+                    Ldb2Converter.convert(filename, new MaxLDBReader2(filename).getLdb());
+
+                    return; // todo remove
+                }
                 if (options.saveAsLv2) {
                     throw new RuntimeException("Not implemented yet");
                 } else {

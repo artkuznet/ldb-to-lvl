@@ -36,6 +36,14 @@ public class MTL {
         return materials;
     }
 
+    public void addMaterial(Material material) {
+        materials.add(material);
+    }
+
+    public MTL() {
+
+    }
+
     public MTL(String filename) {
         try {
             BufferedReader sr = new BufferedReader(new FileReader(filename));
@@ -84,5 +92,17 @@ public class MTL {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public String asText() {
+        StringBuilder sb = new StringBuilder();
+
+        materials.forEach(material -> {
+            sb.append(NEWMTL + " ").append(material.name).append("\r\n");
+            sb.append(MAP_KD + " ").append(material.diffuseFilename).append("\r\n");
+            sb.append("\r\n");
+        });
+
+        return sb.toString();
     }
 }
