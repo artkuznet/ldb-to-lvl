@@ -100,6 +100,9 @@ public class MTL {
         materials.forEach(material -> {
             sb.append(NEWMTL + " ").append(material.name).append("\r\n");
             sb.append(MAP_KD + " ").append(material.diffuseFilename).append("\r\n");
+            if (material.diffuseFilename.contains("Indicators_")) {
+                sb.append("d 0.3").append("\r\n");
+            }
             sb.append("\r\n");
         });
 

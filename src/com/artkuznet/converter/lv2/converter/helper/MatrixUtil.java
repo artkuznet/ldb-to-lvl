@@ -21,4 +21,8 @@ public class MatrixUtil {
                 new double[]{m[3][0] - offset.getX(), m[3][1] - offset.getY(), m[3][2] - offset.getZ()},
         };
     }
+
+    public static Vector3D getPosition(float[][] m) {
+        return new Vector3D(m[3][0], m[3][1], m[3][2]);
+    }
 }

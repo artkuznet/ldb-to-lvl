@@ -1,10 +1,13 @@
 package com.artkuznet.converter.ldb2.collistionshape;
 
 import com.artkuznet.converter.ldb.vertex.Vertex;
+import com.artkuznet.converter.ldb.vertex.VertexUV;
+import com.artkuznet.converter.ldb2.Shape;
 
+import java.util.Collections;
 import java.util.List;
 
-public class CollisionShape {
+public class CollisionShape implements Shape {
     private List<Vertex> vertices;
     private List<Integer> indices;
     private List<Integer> materialIndices;
@@ -32,6 +35,7 @@ public class CollisionShape {
         this.havokMopp = havokMopp;
     }
 
+    @Override
     public List<Vertex> getVertices() {
         return vertices;
     }
@@ -40,8 +44,19 @@ public class CollisionShape {
         this.vertices = vertices;
     }
 
+    @Override
     public List<Integer> getIndices() {
         return indices;
+    }
+
+    @Override
+    public int getMaterialId() {
+        return 0;
+    }
+
+    @Override
+    public List<VertexUV> getUvs() {
+        return Collections.emptyList();
     }
 
     public void setIndices(List<Integer> indices) {

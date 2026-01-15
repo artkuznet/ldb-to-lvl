@@ -2,10 +2,11 @@ package com.artkuznet.converter.ldb2.staticmesh;
 
 import com.artkuznet.converter.ldb.vertex.Vertex;
 import com.artkuznet.converter.ldb.vertex.VertexUV;
+import com.artkuznet.converter.ldb2.Shape;
 
 import java.util.List;
 
-public class StaticMesh {
+public class StaticMesh implements Shape {
     private List<Vertex> vertices;
     private List<Vertex> normals;
     private List<Integer> indices;
@@ -32,6 +33,7 @@ public class StaticMesh {
         this.detailTextureUVs = detailTextureUVs;
     }
 
+    @Override
     public List<Vertex> getVertices() {
         return vertices;
     }
@@ -48,6 +50,7 @@ public class StaticMesh {
         this.normals = normals;
     }
 
+    @Override
     public List<Integer> getIndices() {
         return indices;
     }
@@ -56,6 +59,7 @@ public class StaticMesh {
         this.indices = indices;
     }
 
+    @Override
     public int getMaterialId() {
         return materialId;
     }
@@ -64,6 +68,7 @@ public class StaticMesh {
         this.materialId = materialId;
     }
 
+    @Override
     public List<VertexUV> getUvs() {
         return uvs;
     }

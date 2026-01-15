@@ -303,14 +303,16 @@ public class OBJ {
             String currentMaterialName = null;
 
             for (Face face : object3D.faces) {
-                if (!Objects.equals(currentMaterialName, face.getMaterialName())) {
+                if (face.getMaterialName() != null && !Objects.equals(currentMaterialName, face.getMaterialName())) {
                     sb.append(USEMTL + " ").append(face.getMaterialName()).append("\r\n");
                     currentMaterialName = face.getMaterialName();
                 }
                 sb.append(F + " ");
                 for (Face.Vertex vertex : face.getVertices()) {
                     sb.append(" ").append(vertex.getIndex() + vertexOffset);
-                    sb.append("/").append(vertex.getUvIndex() + uvOffset);
+                    if (vertex.getUvIndex() > 0) {
+                        sb.append("/").append(vertex.getUvIndex() + uvOffset);
+                    }
                 }
                 sb.append("\r\n");
             }

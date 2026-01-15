@@ -3,6 +3,7 @@ package com.artkuznet.converter.lv2.converter;
 import com.artkuznet.converter.Vector3D;
 import com.artkuznet.converter.ldb.vertex.VertexUV;
 import com.artkuznet.converter.lv2.converter.helper.LdbTriangleDTO;
+import com.artkuznet.converter.lv2.converter.helper.LdbTrianglePortalDTO;
 import com.artkuznet.converter.lv2.converter.helper.PolygonIndexCounter;
 import com.artkuznet.converter.maxed.LvlExit;
 import com.artkuznet.converter.maxed.LvlPolygon;
@@ -72,7 +73,7 @@ public class PolygonConverter {
         String materialName = materials.get(Math.max(materialId, 0)).getName();
         String materialCategory = materials.get(Math.max(materialId, 0)).getCategoryName();
 
-        LvlPolygon polygon = triangle.isPortal()
+        LvlPolygon polygon = triangle instanceof LdbTrianglePortalDTO
                 ? new LvlExit(edges, "", triangle.getNormal(), triangle.portalName, triangle.linkedPortalName)
                 : new LvlPolygon(edges, materialCategory, materialName, triangle.getNormal());
 
@@ -102,11 +103,11 @@ public class PolygonConverter {
 
         polygon.textureOffset = (new double[]{uv.getU(), uv.getV()});
 
-        polygon.UV = triangle.uv;
+        polygon.UV = triangle.getUv();
 
         polygon.setArea(triangle.getArea());
 
-        if (triangle.isPortal()) {
+        if (triangle instanceof LdbTrianglePortalDTO) {
             Vector3D[] textureSpace = polygon.getDefaultScaleUV();
             polygon.setScaleU(textureSpace[0]);
             polygon.setScaleV(textureSpace[1]);

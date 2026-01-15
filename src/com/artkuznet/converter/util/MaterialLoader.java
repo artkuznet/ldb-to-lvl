@@ -28,6 +28,10 @@ public class MaterialLoader {
         materialTypeMap.put("white", MaterialType.LIGHTS);
     }
 
+    public static Map<String, MaterialType> getMaterialTypeMap() {
+        return materialTypeMap;
+    }
+
     public static List<Texture> getDefaultTextures() {
         return getDefaultLdbTextureMap().values().stream()
                 .map(TextureConverter::convert)
