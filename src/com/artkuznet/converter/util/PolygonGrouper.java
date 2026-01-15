@@ -3,7 +3,6 @@ package com.artkuznet.converter.util;
 import com.artkuznet.converter.Options;
 import com.artkuznet.converter.Vector3D;
 import com.artkuznet.converter.ldb.vertex.VertexUV;
-import com.artkuznet.converter.maxed.LvlPolygon;
 import com.artkuznet.converter.maxed.LvlPolygon.VertexEdge;
 import com.artkuznet.converter.maxed.LvlPolygon.VertexPolygon;
 
@@ -28,25 +27,29 @@ public class PolygonGrouper {
     }
 
     private static List<List<VertexPolygon>> split(List<VertexPolygon> vertexPolygons) {
-        if (Options.getInstance().skipJoinPolygons) {
+        List<List<VertexEdge>> contours = ContourFinder.findContours(vertexPolygons);
+
+        // todo fix
+        if (Options.getInstance().skipJoinPolygons || contours.isEmpty()) {
             return vertexPolygons.stream().map(Arrays::asList).collect(Collectors.toList());
         }
 
-        List<List<VertexEdge>> contours = ContourFinder.findContours(vertexPolygons);
 
         if (contours.size() == 1) {
             Set<Vector3D> vertices = vertexPolygons.stream()
                     .map(p -> p.edges)
                     .flatMap(List::stream)
-                    .map(e -> e.v1)
+                    .map(e -> Arrays.asList(e.v1, e.v2))
+                    .flatMap(List::stream)
                     .collect(Collectors.toSet());
 
-            List<LvlPolygon.VertexEdge> edges = contours.stream()
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList());
-
-            Set<Vector3D> vEdgesVerticesFrom = edges.stream().map(e -> e.v1).collect(Collectors.toSet());
-            if (vertices.stream().anyMatch(v -> !vEdgesVerticesFrom.contains(v))) {
+            if (vertexPolygons.stream()
+                    .anyMatch(p -> p.edges.stream()
+                            .map(e -> Arrays.asList(e.v1, e.v2))
+                            .flatMap(List::stream)
+                            .noneMatch(vertices::contains)
+                    )
+            ) {
                 return vertexPolygons.stream().map(Arrays::asList).collect(Collectors.toList());
             }
         }
@@ -68,7 +71,28 @@ public class PolygonGrouper {
     }
 
     private static boolean haveSharedEdges(VertexPolygon a, VertexPolygon b) {
-        return a.edges.stream().anyMatch(edgeA -> b.edges.stream().anyMatch(edgeB -> edgesMatch(edgeA, edgeB)));
+        return a.edges.stream().anyMatch(edgeA -> b.edges.stream().anyMatch(edgeB -> edgesMatch(edgeA, edgeB)
+                || checkMaterial(a, b)
+        ));
+    }
+
+    private static boolean checkMaterial(VertexPolygon a, VertexPolygon b) {
+
+        List<String> materials = Arrays.asList(
+                "dummy",
+                "skybox",
+                "ai_node_collision_nodraw",
+                "charactercollision_nodraw",
+                "collision_nodraw",
+                "playercollision_nodraw",
+                "npccollision_nodraw",
+                "cameracollision"
+        );
+
+        return a.materialName.equalsIgnoreCase(b.materialName) &&
+                materials.contains(a.materialName.toLowerCase())
+                && materials.contains(b.materialName.toLowerCase()
+        );
     }
 
     private static List<List<VertexPolygon>> findConnectedComponents(

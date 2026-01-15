@@ -3,8 +3,11 @@ package com.artkuznet.converter.maxed2.entity.mesh;
 import com.artkuznet.converter.Vector3D;
 import com.artkuznet.converter.ldb.vertex.Vertex;
 import com.artkuznet.converter.maxed2.entity.Entity;
+import com.artkuznet.converter.util.ChecksumGenerator;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class Mesh extends Entity {
 
@@ -124,7 +127,57 @@ public class Mesh extends Entity {
         this.properties = properties;
     }
 
+    public Mesh optimize() {
+        throw new RuntimeException("not implemented yet");
+    }
+
     public Vector3D getPosition() {
         return new Vector3D(localMatrix[3][0], localMatrix[3][1], localMatrix[3][2]);
+    }
+
+    public Vector3D getCenter() {
+        List<Vector3D> v = polygons.stream()
+                .map(Polygon::getEdges)
+                .flatMap(List::stream)
+                .map(e -> Arrays.asList(vertices.get(e.from), vertices.get(e.to)))
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+
+        return new Vector3D(
+                v.stream().map(Vector3D::getX).reduce(Double::sum).orElseThrow(RuntimeException::new) / v.size(),
+                v.stream().map(Vector3D::getY).reduce(Double::sum).orElseThrow(RuntimeException::new) / v.size(),
+                v.stream().map(Vector3D::getZ).reduce(Double::sum).orElseThrow(RuntimeException::new) / v.size()
+        );
+    }
+
+    public Vector3D getSize() {
+        return new Vector3D(
+                vertices.stream().map(Vector3D::getX).max(Double::compareTo).orElseThrow(RuntimeException::new) - vertices.stream().map(Vector3D::getX).min(Double::compareTo).orElseThrow(RuntimeException::new),
+                vertices.stream().map(Vector3D::getY).max(Double::compareTo).orElseThrow(RuntimeException::new) - vertices.stream().map(Vector3D::getY).min(Double::compareTo).orElseThrow(RuntimeException::new),
+                vertices.stream().map(Vector3D::getZ).max(Double::compareTo).orElseThrow(RuntimeException::new) - vertices.stream().map(Vector3D::getZ).min(Double::compareTo).orElseThrow(RuntimeException::new)
+        );
+    }
+
+    public long getChecksum() {
+        return ChecksumGenerator.generateChecksum(this.getPolygons().stream()
+                .map(Polygon::getArea)
+                .sorted(Double::compareTo)
+                .map(value -> String.format("%.3f", value))
+                .collect(Collectors.joining(";"))
+                + this.getPolygons().stream()
+                .map(Polygon::getEdges)
+                .map(List::size)
+                .sorted(Integer::compareTo)
+                .map(Object::toString)
+                .collect(Collectors.joining(";")));
+    }
+
+    public boolean isClosed() {
+        return polygons.stream()
+                .map(Polygon::getEdges)
+                .flatMap(List::stream)
+                .map(Polygon.Edge::normalize)
+                .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
+                .values().stream().allMatch(v -> 2 == v);
     }
 }
