@@ -19,10 +19,9 @@ public class LdbTriangleDTO {
 
     private int materialTypeId = MaterialType.DEFAULT.ordinal();
 
-    private List<VertexUV> uv = new ArrayList<>();
+    //    protected List<VertexUV> uv = new ArrayList<>();
+    protected List<VertexUV> uv;// = Arrays.asList(new VertexUV(0, 0), new VertexUV(1, 0), new VertexUV(0, 1));
 
-    public String portalName;
-    public String linkedPortalName;
 
     private final double area;
 
@@ -36,6 +35,8 @@ public class LdbTriangleDTO {
         }
         this.vertices = vertices.stream().map(Vector3D::clone).collect(Collectors.toList());
         this.normal = Vector3D.calculateNormal(this.vertices);
+
+        computeWorldAlignedUV();
 
         Vector3D v1 = this.vertices.get(0).clone();
         Vector3D v2 = this.vertices.get(1).clone();
@@ -71,6 +72,46 @@ public class LdbTriangleDTO {
             throw new RuntimeException();
         }
         this.uv = uv;
+    }
+
+    private void computeWorldAlignedUV() {
+        Vector3D v0 = vertices.get(0);
+        Vector3D v1 = vertices.get(1);
+        Vector3D v2 = vertices.get(2);
+
+        Vector3D e1 = v1.clone().minus(v0);
+        Vector3D e2 = v2.clone().minus(v0);
+
+        Vector3D normal = e1.cross(e2).normalize();
+
+        double ax = Math.abs(normal.getX());
+        double ay = Math.abs(normal.getY());
+        double az = Math.abs(normal.getZ());
+
+        uv = new ArrayList<>(3);
+
+        if (ay >= ax && ay >= az) {
+            for (Vector3D v : vertices) {
+                uv.add(new VertexUV(
+                        (float) v.getX(),
+                        (float) v.getZ()
+                ));
+            }
+        } else if (ax >= ay && ax >= az) {
+            for (Vector3D v : vertices) {
+                uv.add(new VertexUV(
+                        (float) v.getZ(),
+                        (float) v.getY()
+                ));
+            }
+        } else {
+            for (Vector3D v : vertices) {
+                uv.add(new VertexUV(
+                        (float) v.getX(),
+                        (float) v.getY()
+                ));
+            }
+        }
     }
 
     public int getMaterialId() {

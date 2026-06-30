@@ -74,7 +74,7 @@ public class PolygonConverter {
         String materialCategory = materials.get(Math.max(materialId, 0)).getCategoryName();
 
         LvlPolygon polygon = triangle instanceof LdbTrianglePortalDTO
-                ? new LvlExit(edges, "", triangle.getNormal(), triangle.portalName, triangle.linkedPortalName)
+                ? new LvlExit(edges, "", triangle.getNormal(), ((LdbTrianglePortalDTO) triangle).getPortalName(), ((LdbTrianglePortalDTO) triangle).getLinkedPortalName())
                 : new LvlPolygon(edges, materialCategory, materialName, triangle.getNormal());
 
         polygon.index = PolygonIndexCounter.getInstance().next();

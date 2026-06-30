@@ -161,7 +161,7 @@ public class TriangleGrouper {
     }
 
 
-    private static boolean areTrianglesConnectedAndNotTwisted(
+    static boolean areTrianglesConnectedAndNotTwisted(
             LdbTriangleDTO t1,
             LdbTriangleDTO t2
     ) {

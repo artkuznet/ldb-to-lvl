@@ -79,6 +79,18 @@ public class Vector3D {
         return new Vector3D(i, -j, k);
     }
 
+    public Vector3D cross(Vector3D o) {
+        return new Vector3D(
+                y * o.z - z * o.y,
+                z * o.x - x * o.z,
+                x * o.y - y * o.x
+        );
+    }
+
+    public double dot(Vector3D o) {
+        return x * o.x + y * o.y + z * o.z;
+    }
+
     public double angle(final Vector3D point) {
         double ab = x * point.x + y * point.y + z * point.z;
 
@@ -87,6 +99,10 @@ public class Vector3D {
 
     public double magnitude() {
         return Math.sqrt(x * x + y * y + z * z);
+    }
+
+    public double length() {
+        return Math.sqrt(dot(this));
     }
 
     public Vector3D minus(final Vector3D point) {

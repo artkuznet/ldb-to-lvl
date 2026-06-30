@@ -123,7 +123,7 @@ public class Ldb2Converter {
         List<OBJ.Object3D> staticMeshes = ldb2.getRooms().getList().stream()
                 .map(room -> {
                     Pair<List<LdbTriangleDTO>, List<List<LdbTriangleDTO>>> m = extractTriangles(room, ldb2.getPortals().getList(), materialTypeMap);
-                    List<List<LdbTriangleDTO>> result = new ArrayList<>(m.getValue());
+                    List<List<LdbTriangleDTO>> result = new ArrayList<>();// new ArrayList<>(m.getValue());
                     result.add(m.getKey());
 
                     return result.stream()
@@ -135,7 +135,7 @@ public class Ldb2Converter {
                 .collect(Collectors.toList());
 
 
-        staticMeshes.addAll(dynamicMeshes);
+//        staticMeshes.addAll(dynamicMeshes);
 
         List<String> text = new ArrayList<>();
 
@@ -209,7 +209,7 @@ public class Ldb2Converter {
         return object3D;
     }
 
-    private static List<LdbTriangleDTO> getTriangles(List<Shape> shapes, Vector3D position) {
+    public static List<LdbTriangleDTO> getTriangles(List<Shape> shapes, Vector3D position) {
         List<LdbTriangleDTO> meshTriangles = new ArrayList<>();
         for (Shape shape : shapes) {
             for (int i = 0; i < shape.getIndices().size() / 3; i++) {
@@ -240,7 +240,7 @@ public class Ldb2Converter {
     }
 
     // todo refactor
-    private static Pair<List<LdbTriangleDTO>, List<List<LdbTriangleDTO>>> extractTriangles(Room room, List<Portal> portals, Map<String, Integer> materialTypeMap) {
+    public static Pair<List<LdbTriangleDTO>, List<List<LdbTriangleDTO>>> extractTriangles(Room room, List<Portal> portals, Map<String, Integer> materialTypeMap) {
         double[][] roomMatrix = MatrixUtil.matrixFloatToDouble(room.getTransform());
 
         Vector3D positionOffset = new Vector3D(roomMatrix[3][0], roomMatrix[3][1], roomMatrix[3][2]).multiply(-1);
@@ -251,8 +251,25 @@ public class Ldb2Converter {
                                 .map(Vector3D::new)
                                 .collect(Collectors.toList())
                         ).stream()
-                        .map(LdbTrianglePortalDTO::new)
-                        .peek(t -> t.setMaterialId(materialTypeMap.get("skybox"))) // todo "portal"
+                        .map(v -> {
+
+                            Set<Portal> linkedPortals = portals.stream()
+                                    .filter(p -> !p.equals(portal))
+                                    .filter(p -> new HashSet<>(p.getPoints().stream()
+                                            .map(Vector3D::new).map(Vector3D::hardSmooth).collect(Collectors.toSet())).containsAll(
+                                            portal.getPoints().stream().map(Vector3D::new).map(Vector3D::hardSmooth).collect(Collectors.toSet())
+                                    ))
+                                    .collect(Collectors.toSet());
+
+                            Portal linkedPortal = linkedPortals.size() == 1 ? linkedPortals.stream().findFirst().orElseThrow(RuntimeException::new) : null;
+
+                            if (linkedPortals.size() != 1) {
+                                throw new RuntimeException();
+                            }
+
+                            return new LdbTrianglePortalDTO(v, portal.getName(), linkedPortal.getName());
+                        })
+//                        .peek(t -> t.setMaterialId(materialTypeMap.get("skybox"))) // todo "portal"
                         .collect(Collectors.toList()))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
@@ -275,29 +292,31 @@ public class Ldb2Converter {
                         triangles.addAll(
                                 collisionTriangles.stream()
                                         .filter(t -> materialType.ordinal() == t.getMaterialTypeId())
-                                        .peek(t -> t.setMaterialId(materialTypeMap.get(name.toLowerCase())))
+//                                        .peek(t -> t.setMaterialId(materialTypeMap.get(name.toLowerCase())))
                                         .collect(Collectors.toList())
                         );
                     }
                 });
 
-        List<List<LdbTriangleDTO>> groups = TriangleGrouper.groupTriangles(triangles);
+//        List<List<LdbTriangleDTO>> groups = GeometryProcessor.splitIntoRoomAndObjects(triangles);
+        List<List<LdbTriangleDTO>> groups = FastBspGroupingProcessor.splitIntoValidBspGroups(triangles);
 
-        List<LdbTriangleDTO> largest = groups.stream()
-                .max(Comparator.comparingDouble(o -> o.stream().map(LdbTriangleDTO::getArea).reduce(Double::sum).orElseThrow(RuntimeException::new)))
-                .orElseThrow(RuntimeException::new);
+//        List<LdbTriangleDTO> largest = groups.stream()
+//                .max(Comparator.comparingDouble(o -> o.stream().map(LdbTriangleDTO::getArea).reduce(Double::sum).orElseThrow(RuntimeException::new)))
+//                .orElseThrow(RuntimeException::new);
 
         List<LdbTriangleDTO> withPortals = groups.stream()
                 .filter(triangleDTOS -> triangleDTOS.stream().anyMatch(t -> t instanceof LdbTrianglePortalDTO))
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
 
-        List<LdbTriangleDTO> finalRoom = new ArrayList<>(largest);
+        List<LdbTriangleDTO> finalRoom = new ArrayList<>();//new ArrayList<>(largest);
         finalRoom.addAll(withPortals);
         finalRoom = finalRoom.stream().distinct().collect(Collectors.toList());
 
         List<LdbTriangleDTO> finalRoom1 = finalRoom;
-        List<List<LdbTriangleDTO>> groups1 = TriangleGrouper.groupTriangles(
+//        List<List<LdbTriangleDTO>> groups1 = GeometryProcessor.splitIntoRoomAndObjects(
+        List<List<LdbTriangleDTO>> groups1 = FastBspGroupingProcessor.splitIntoValidBspGroups(
                 triangles.stream()
                         .filter(t -> t.getMaterialTypeId() != MaterialType.COLLISION_NODRAW.ordinal())
                         .filter(t -> !finalRoom1.contains(t))
