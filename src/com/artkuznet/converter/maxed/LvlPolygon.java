@@ -113,6 +113,8 @@ public class LvlPolygon {
         private byte b;
         private byte a = (byte) 255;
 
+        public static final Color WHITE = new Color(255, 255, 255);
+
         public Color(int r, int g, int b) {
             this.r = (byte) (r & 0xFF);
             this.g = (byte) (g & 0xFF);
@@ -138,6 +140,10 @@ public class LvlPolygon {
 
     public float maxEdgeLength = 0;
     public float maxAngle = 0;
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
 
     private Color color = new Color(0, 0, 0);
 
@@ -186,7 +192,11 @@ public class LvlPolygon {
 
     public double[] textureOffset = new double[]{0, 0};
 
-    public double lightIntensity = 1.0;
+    public void setLightIntensity(double lightIntensity) {
+        this.lightIntensity = lightIntensity;
+    }
+
+    public double lightIntensity = 1.0; // todo private
     public double lightmapResolution = 4.0; // todo param
     public int pointPolygonIndex = -1;
 

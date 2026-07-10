@@ -366,7 +366,7 @@ public class LVL {
                                 .toArray(LvlPolygon[]::new)
                         );
 
-                        return mesh.optimize().joinPolygons().buildPolyGroups();
+                        return mesh.optimize().joinPolygons().buildPolyGroups().processLighting();
                     }).collect(Collectors.toList());
 
             List<DynamicMesh> dynamicMeshes = ldb.getDynamicMeshes().getList().stream()

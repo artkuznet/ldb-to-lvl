@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class Main {
 
     public static void main(final String[] args) {
-
+/*
 //        MaxLV2Reader lvlReader2 = new MaxLV2Reader(String.format("C:\\MaxPayne2Dev\\Levels\\%s.lv2", "Manor_Frontyard_GG"));
         MaxLV2Reader lvlReader2 = new MaxLV2Reader(String.format("C:\\MaxPayne2Dev\\Levels\\%s.lv2", "ExampleLevel"));
 
@@ -149,8 +149,9 @@ public class Main {
         if (levelName != null) {
             return; // todo remove
         }
+*/
 
-        List<String> filenames = Arrays.stream(args)
+        List<String> filenames = Arrays.stream(/*args*/ new String[]{"C:\\Program Files (x86)\\Steam\\steamapps\\common\\Max Payne RU\\data\\database\\levels\\part3\\Part3_Level5.ldb"})
                 .filter(a -> a.toLowerCase().endsWith(".ldb") || a.toLowerCase().endsWith(".obj"))
                 .collect(Collectors.toList());
 

@@ -1,6 +1,7 @@
 package com.artkuznet.converter.maxed;
 
 import com.artkuznet.converter.Vector3D;
+import com.artkuznet.converter.maxed.helper.MeshLightingProcessor;
 import com.artkuznet.converter.util.*;
 
 import java.util.*;
@@ -306,5 +307,25 @@ public class Mesh extends MaxObject {
         Vector3D v2 = transformPosition.clone().minus(max.clone().multiply(-1));
 
         this.position = new double[]{v1.getX(), v1.getY(), v1.getZ(), v2.getX(), v2.getY(), v2.getZ(), v1.clone().minus(v2.clone()).magnitude() / 2.0};
+    }
+
+    public long getChecksum() {
+        return ChecksumGenerator.generateChecksum(Arrays.stream(this.getPolygons())
+                .map(LvlPolygon::getArea)
+                .sorted(Double::compareTo)
+                .map(value -> String.format("%.3f", value))
+                .collect(Collectors.joining(";"))
+                + Arrays.stream(this.getPolygons())
+                .map(LvlPolygon::getEdges)
+                .map(e -> e.length)
+                .sorted(Integer::compareTo)
+                .map(Object::toString)
+                .collect(Collectors.joining(";")));
+    }
+
+    public Mesh processLighting() {
+        MeshLightingProcessor.process(this);
+
+        return this;
     }
 }
