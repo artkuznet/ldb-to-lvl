@@ -471,7 +471,7 @@ public class LVL {
                                 ldbDynamicMesh.getAnimations().getList()
                         ));
 
-                        return dynamic.optimize().joinPolygons().buildPolyGroups();
+                        return dynamic.optimize().joinPolygons().buildPolyGroups().processLighting();
                     }).collect(Collectors.toList());
 
             childs.addAll(dynamicMeshes);
@@ -614,7 +614,7 @@ public class LVL {
 
             mesh.childObjects.addAll(parentObjects);
 
-            return mesh.optimize().joinPolygons().buildPolyGroups();
+            return mesh.optimize().joinPolygons().buildPolyGroups().processLighting();
         }).collect(Collectors.toList());
 
         for (Mesh room : rooms) {

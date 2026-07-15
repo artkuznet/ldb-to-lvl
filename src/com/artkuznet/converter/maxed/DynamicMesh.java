@@ -91,4 +91,9 @@ public class DynamicMesh extends Mesh implements Dynamic, FSM {
     public DynamicMesh buildPolyGroups() {
         return (DynamicMesh) super.buildPolyGroups();
     }
+
+    @Override
+    public DynamicMesh processLighting() {
+        return (DynamicMesh) super.processLighting();
+    }
 }

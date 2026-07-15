@@ -71,9 +71,17 @@ public class PolygonGrouper {
     }
 
     private static boolean haveSharedEdges(VertexPolygon a, VertexPolygon b) {
-        return a.edges.stream().anyMatch(edgeA -> b.edges.stream().anyMatch(edgeB -> edgesMatch(edgeA, edgeB)
-                || checkMaterial(a, b)
+        return (a.edges.stream().anyMatch(edgeA -> b.edges.stream().anyMatch(edgeB -> edgesMatch(edgeA, edgeB)
+                || checkMaterial(a, b)) && !excludedBitmaps(a, b)
         ));
+    }
+
+    // TODO refactor
+    private static boolean excludedBitmaps(VertexPolygon a, VertexPolygon b) {
+        List<String> bitmaps = Arrays.asList("LAMP27_32X64");
+
+        return bitmaps.stream().anyMatch(bitmap -> a.bitmapName.contains(bitmap))
+                && bitmaps.stream().anyMatch(bitmap -> b.bitmapName.contains(bitmap));
     }
 
     private static boolean checkMaterial(VertexPolygon a, VertexPolygon b) {

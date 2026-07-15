@@ -105,6 +105,18 @@ public class Mesh extends MaxObject {
             polygon.calculateTriangles();
         }
 
+        // TODO exclude list
+        if (this.getName().equals("Mesh_402")
+                || this.getChecksum() == 450681776500423730L
+                || this.getChecksum() == 4977642932638294487L
+        ) {
+
+//            String name = this.getName();
+//            long sum = this.getChecksum();
+
+            return this;
+        }
+
         List<LvlPolygon> polygonList = Arrays.stream(this.polygons).collect(Collectors.toList());
 
         List<LvlPolygon.VertexPolygon> vertexPolygons = polygonList.stream()

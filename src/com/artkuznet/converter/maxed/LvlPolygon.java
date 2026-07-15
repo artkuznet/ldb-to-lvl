@@ -114,6 +114,8 @@ public class LvlPolygon {
         private byte a = (byte) 255;
 
         public static final Color WHITE = new Color(255, 255, 255);
+        public static final Color WARM = new Color(255, 241, 204);
+        public static final Color NIGHT = new Color(150, 150, 180);
 
         public Color(int r, int g, int b) {
             this.r = (byte) (r & 0xFF);
@@ -468,8 +470,8 @@ public class LvlPolygon {
     }
 
     public void calculateColor() {
-        if (this.materialName.equalsIgnoreCase("laser")) {
-            this.color = new Color(255, 255, 255);
+        if (this.materialName.equalsIgnoreCase("laser") || this.bitmapName.toLowerCase().contains("laser")) {
+            this.color = Color.WHITE;
             return;
         }
 

@@ -115,7 +115,7 @@ public class Polygon {
     private Vector3D unkVertexXYZ = new Vector3D(0, 0, 0);
 
     private Unk1 unk3;
-    private float texelsPerMeter = 4f;
+    private float texelsPerMeter = 4f; // TODO 4f
     private int[] unk4;
     private String materialCategory = "";
     private String materialName = "";
